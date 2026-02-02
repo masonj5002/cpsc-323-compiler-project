@@ -1,0 +1,8 @@
+{
+    "_comment": "Adds a newline after the final line and ensures only one line is present",
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    "cSpell.words": [
+        "Wextra"
+    ]
+}
