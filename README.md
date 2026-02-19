@@ -1,3 +1,3 @@
 # Compilers & Languages Compiler Project
 
-CPSC 323-13, Spring 2026, Cal State Fullerton
+Group project for CPSC 323-13 (Spring 26) at CSUF
