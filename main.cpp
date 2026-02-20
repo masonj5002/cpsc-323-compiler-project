@@ -4,7 +4,6 @@
 #include <utility>
 #include <string>
 
-
 void lex_scan(const std::string& line)
 {
     /* */
@@ -32,36 +31,39 @@ std::pair<std::string, std::string> lexer(const std::string& token)
 
 int main() {
 
-    std::vector<std::pair<std::string, int>> state_table =
+    std::vector<std::pair<int, int>> test = {{1, 1}, {2, 2}, {3, 3}, {4, 4}, {5, 5}};
+    std::vector<std::pair<std::string, std::vector<int>>> state_table = 
     {
-        { "l", {} },
-        { "d", 1},
-        { "{", 2},
-        { "}", 0},
-        { "(", 0},
-        { "*", 0},
-        { ")", 0},
-        { ":", 0},
-        { "=", 0},
-        { "<"}
+        { "l", {2, 2, 1}},
+        { "d", {1}},
+        { "{", {2}},
+        { "}", {0}},
+        { "(", {0}},
+        { "*", {0}},
+        { ")", {0}},
+        { ":", {0}},
+        { "=", {0}},
+        { "<", {0}},
+        { "sp", {1, 3, 1}}, // space
+        { "p", {0}},        // punctuation
     };
 
-    std::map<std::string, std::vector<int>> state_table =
-    {
-      { , }  
-    };
+    // std::map<std::string, std::vector<int>> state_table =
+    // {
+    //   { , }  
+    // };
 
-    for (const auto& p : state_table) std::cout << p.first
+    // for (const auto& p : state_table) std::cout << p.first
 
-    while (std::cin >> variable)
-    std::vector<std::vector<int>> state_table;
+    // while (std::cin >> variable)
+    // std::vector<std::vector<int>> state_table;
 
-    for (const auto& p : state_table)
-    {
-        std::cout << '{' << p.first << ',' << p.second << "}\n";
-    }
+    // for (const auto& p : state_table)
+    // {
+    //     std::cout << '{' << p.first << ',' << p.second << "}\n";
+    // }
 
-    std::vector<char>        seperators = { '@', '(', ')', ',', '{', '}', ';'};
+    std::vector<char>        separators = { '@', '(', ')', ',', '{', '}', ';'};
     std::vector<std::string> keywords   = { "function", "integer", "boolean", "real", "if", "fi", "otherwise", "return", "write", "read", "while", "true", "false"};
     std::vector<std::string> operators  = {"=", "+", "-", "*", "/", "==", "!=", ">", "<", "<=", "=>"};
     
@@ -75,12 +77,22 @@ int main() {
         return -1;
     }
 
-    
+    // prints text file
     while (!my_file.eof())
     {
         std::getline(my_file, line, '\n');
-        std::cout << line << '\n';
+        // std::cout << line << '\n';
+        // for each character on each line, determine what the character is
+        for (char c : line) {
+            // std::cout << c;
+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+                //std::cout << "this is a letter\n";
+                std::cout << state_table[0].second[0] << std::endl;
+            }
+        }
+        std::cout << "\n";
     }
+    my_file.close();
 
     // if (my_file.is_open())
     // {
