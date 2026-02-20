@@ -47,6 +47,85 @@ bool fsm(const std::string& w) // w is a bit string basically
     return false;
 }
 
+
+void lex_scan(const std::string& line)
+{
+    std::vector<std::vector<int>> state_table; // define this in the future
+
+    std::string column_string = ".''{}(*)$:=<> ";
+
+    std::string alph = "_ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    std::string digits = "#0123456789";
+
+    int start_pointer, current_char_pointer, token_class, column;
+
+    char current_char;
+    
+    std::string token;
+
+    // lex_state - global static integer var. (initially 1 before first call to lex_scan)
+
+    current_char_pointer = 1;
+    start_pointer        = 1;
+
+    while ( current_char_pointer <= line.size() )
+    {
+        current_char = line[current_char_pointer];
+
+        column = column_string.find(current_char) + 2;
+
+        
+        if (column < 3)
+        {
+            if (alph.find(std::toupper(current_char)) > 0)
+            {
+                column = 1;
+            }
+            else if (digits.find(current_char) > 0)
+            {
+                column = 2;
+            }
+            else
+            {
+                column = 12;
+            }
+        }
+
+        // need to fix for this to actually work
+        lex_state = state_table[lex_state][column]; // lex_staet = state_table[current_state][input]
+        
+        switch(lex_state)
+        {
+            case 3:
+                token = line.substr(start_pointer, current_char_pointer - start_pointer);
+
+                token_class = keywordSearch(token); // check for possible keyword
+
+                // im guessing that if we find a keyword, then token_class will be either < 1 or > 1
+                if (token_class < 1) token_class = 1;
+
+                enter(token, token_class); // put in symbol table
+
+                lex_state = 1; // go back to starting state
+                
+                current_char_pointer = current_char_pointer - 1;
+
+                break;
+            
+            /* supposed to do the rest for the other states apparently 3 and so on*/
+
+            default:
+                std::cout << "default\n";
+        }
+
+        current_char_pointer += 1;
+
+        // actual textbook line: if lex_state=1 then sp := cp; 
+        if (lex_state == 1) start_pointer = current_char_pointer;
+    }
+}
+
 int main()
 {
     
