@@ -4,6 +4,8 @@
 #include <utility>
 #include <vector>
 
+#include "lexer.h"
+
 // void lex_scan(const std::string& line)
 // {
 //     /* */
@@ -12,7 +14,7 @@
 // std::pair<std::string, std::string> lexer(const std::string& token)
 // {
 
-//     // 1. Pass it into the seperator FSM
+//     // 1. Pass it into the separator FSM
 
 //     // 2. Pass it into the keyword FSM
 
@@ -31,6 +33,9 @@
 // TODO: Make a class for each FSM (or all of them in the same class)
 
 int main() {
+
+    printHello();
+
     // TODO: Finish state table
     // TODO: Move state table to separate class file
     std::vector<std::pair<std::string, std::vector<int>>> state_table = {
