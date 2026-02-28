@@ -1,3 +1,13 @@
+/*
+    
+    Assignment 1 : Lexical Analyzer
+    Members: Mason Jennings, Gabriel Apodaca, Anthony Jimenez
+    Submission Date: 3/1/2026
+    Due Date: 3/1/2026
+    Chosen Language: C++
+
+*/
+
 #pragma once
 
 #include <string>

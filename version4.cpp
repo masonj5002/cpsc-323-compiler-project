@@ -1,4 +1,12 @@
-// Note: This C++ program was compiled using g++ 13.2.0
+/*
+    
+    Assignment 1 : Lexical Analyzer
+    Members: Mason Jennings, Gabriel Apodaca, Anthony Jimenez
+    Submission Date: 3/1/2026
+    Due Date: 3/1/2026
+    Chosen Language: C++
+
+*/
 
 #include <vector>
 #include <string>
@@ -115,17 +123,17 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    std::string input_file_name  = arguments[1];
-    std::string output_file_name = arguments[2];
+    const std::string INPUT_FILE_NAME  = arguments[1];
+    const std::string OUTPUT_FILE_NAME = arguments[2];
     
 
     // Create file input and output streams
-    std::ifstream input_file_stream {input_file_name };
-    std::ofstream output_file_stream{output_file_name};
+    std::ifstream input_file_stream {INPUT_FILE_NAME };
+    std::ofstream output_file_stream{OUTPUT_FILE_NAME};
     
     if (!input_file_stream.is_open() || !output_file_stream.is_open())
     {
-        std::cout << "Error while creating file streams for " << input_file_name << " and " << output_file_name << '\n';
+        std::cout << "Error while creating file streams for " << INPUT_FILE_NAME << " and " << OUTPUT_FILE_NAME << '\n';
         return -1;
     }
 
@@ -136,7 +144,7 @@ int main(int argc, char* argv[])
     std::vector<std::string> operators  = { "=", "+", "-", "*", "/", "==", "!=", ">", "<", "<=", "=>"};
     
     std::vector<std::string> compound_operators = {"==", "!=", "<=", "=>"};
-    std::vector<std::string> special_operators  = {"=",  "!",  "<", ">"  };
+    std::vector<std::string> special_operators  = {"=",  "!",  "<", ">"  }; // Operators that could potentially be the first character of a compound operator
 
 
     // Header for the output file
@@ -158,11 +166,9 @@ int main(int argc, char* argv[])
         // Begin processing the obtained line from the input file.
         while (current_char < line.size() && count <= line.size())
         {
-            
             // Get current substring
             std::string current_substr = line.substr(current_char, count);
 
-            // std::cout << '[' << current_char << ',' << count << "]: " << current_substr << '\n';
 
             // Skip comments 
             if (current_substr == "/" && count <= line.size())
@@ -170,12 +176,13 @@ int main(int argc, char* argv[])
                 std::string next_possible = line.substr(current_char, count + 1);
                 if (next_possible == "/*")
                 {
-                    // std::cout << "HELLO\n";
+                    // Keep reading pairs of characters until we find */
                     while (next_possible != "*/")
                     {
+                        // If run out of characters and we did not find a closing comments symbol */,
+                        // then we must move to the next line begin skipping characters again.
                         if (current_char >= line.size() || count >= line.size())
                         {
-                            
                             std::getline(input_file_stream, line, '\n');
                             current_char = 0;
                             count = 2;
@@ -211,43 +218,46 @@ int main(int argc, char* argv[])
             }
             
 
-            // Send the current substring to the lexer
+            // Send the current substring to the lexer 
             Record result = lexer(current_substr);
-
-            // std::cout << "RESULT: " << result.token << ' ' << result.lexeme << '\n';
-
-            // Determine which possible token that is about to show up and construct it.
-
 
             if (result.token == "identifier")
             {
+                // Here we check what other characters are possibly part of the identifer
+                // or if this "identifier" is actually just a keyword
                 if (count <= line.size())
                 {
-                    int i = 1;
                     std::string potential_identifier = line.substr(current_char, count + 1);
+                    
+                    // Keep reading characters until the lexer cannot recognize an identifier or keyword
+                    int i = 1;
                     while ((lexer(potential_identifier).token == "identifier" || lexer(potential_identifier).token == "keyword") && count + i <= line.size())
                     {
                         i += 1;
                         potential_identifier = line.substr(current_char, count + i);
                     }
-                    potential_identifier = line.substr(current_char, count + i - 1);
+                    potential_identifier = line.substr(current_char, count + i - 1); // Get last string that was accepted
+
 
                     Record potential_identifier_record = lexer(potential_identifier);
-
                     result.token  = potential_identifier_record.token;
                     result.lexeme = potential_identifier_record.lexeme;
 
                     current_char += i - 1;
                 }
+
+                // Write the token and lexeme to the output file
+                output_file_stream << std::setw(20) << std::left << result.token << ' ' << result.lexeme << '\n';
+                
+                // Move the current_char to the next potential token and set reading count back to 1 
                 current_char += count;
                 count = 1;
-                output_file_stream << std::setw(20) << std::left << result.token << ' ' << result.lexeme << '\n';
                 continue;
             }
             else if (result.token == "integer")
             {
-                // take into accountability of reals. this can possibly be a real b/c the regular expression of real starts with an integer
-                // if the next character is a '.'
+                // Keep reading characters just in case there are more digits in the 
+                // integer portion of our number
                 while (lexer(current_substr).token == "integer" && count <= line.size())
                 {
                     count += 1;
@@ -256,29 +266,31 @@ int main(int argc, char* argv[])
                 count -= 1; // Go back one to the last accepting input string for an integer
                 current_substr = line.substr(current_char, count);
 
-                // std::cout << "INTEGER PORTION: " << current_substr << '\n';
-
-                // std::cout << "CURRENT: " << current_substr << '\n';
+                // Check if this number is a real
                 bool real_number_found = false;
                 if (count <= line.size())
                 {
                     std::string next_substr = line.substr(current_char, count + 1);
-                    // std::cout << "size - 1: " << next_substr[next_substr.size() - 1] << '\n';
-                    // std::cout << "count: " << next_substr[count] << '\n';
-                    
+
+                    // If there is a decimal '.', then this must be a real and we will
+                    // keep checking after the decimal for digits in the fractional portion
+                    // of our real number
                     if (next_substr[next_substr.size() - 1] == '.')
                     {
                         std::string fraction_part_of_real = line.substr(current_char + count + 1, 1);
-                        // std::cout << "FRACTION PART: " << fraction_part_of_real << '\n';
+
+                        // Keep reading characters after the '.' to obtain the digits in the 
+                        // fractional portion of our real number
                         int i = 1;
                         while (i <= line.size() && lexer(fraction_part_of_real).token == "integer")
                         {
                             i += 1;
                             fraction_part_of_real = line.substr(current_char + count + 1, i);
-                            // std::cout << "EACH ITERATION: " << fraction_part_of_real << '\n';
                         }
-                        fraction_part_of_real = line.substr(current_char + count + 1, i - 1);
-                        // std::cout << fraction_part_of_real << '\n';
+                        fraction_part_of_real = line.substr(current_char + count + 1, i - 1); // Get last string that was accepted
+
+                        // See if the integer portion, the character after the integer portion (which should be a '.'), and
+                        // the fraction portion make up a real. If not, then this is just an integer.
                         Record potential_real_record = lexer(next_substr + fraction_part_of_real);
                         if (potential_real_record.token == "real")
                         {
@@ -289,35 +301,37 @@ int main(int argc, char* argv[])
                         }
                     }
                 }
-                // std::cout << "COUNT IN INTEGER: " << count << '\n';
-                current_char += count;
 
+                // Move the current_char to the next potential token and set reading count back to 1 
+                current_char += count;
                 count = 1;
 
+                // If no real number was found, then current_substr contains the constructed integer
+                // portion of what would be an a real number. We call the lexer to get an updated
+                // version of the integer
                 if (!real_number_found) result = lexer(current_substr);
 
+                // Write the token and lexeme to the output file
                 output_file_stream << std::setw(20) << std::left << result.token << ' ' << result.lexeme << '\n';
+                
                 continue;
             }
             else if (result.token == "separator")
             {
+                // Write the token and lexeme to the output file
                 output_file_stream << std::setw(20) << std::left << result.token << ' ' << result.lexeme << '\n';
+                
+                // Move the character pointer to the next character, set reading count to 1, and skip the
+                // increment statement at the bottom of the while loop so we do not read excess characters.
                 current_char += 1;
                 count = 1;
                 continue;
             }
             else if (result.token == "operator")
             {
-                // take into acountability of compound operators
-                // if the lexeme is any one of the special operators
-                // which have the potential to become a compound operator,
-                // then check if the next character added onto to the current substring
-                // if it could match any one of the compound operators.
-                // if yes, then this is a compound operator
-                // if no, then this is a single operator
-                // std::cout << "operator found " << result.lexeme << "\n";
+                
+                // Check if this operator is the first character of any one of the compound operators
                 bool special_operator_found = false;
-
                 for (const std::string& special_operator : special_operators)
                 {
                     if (current_substr == special_operator)
@@ -327,13 +341,14 @@ int main(int argc, char* argv[])
                     }
                 }
 
+                // If we found the starting character of a compound operator, we need to read one character extra
+                // and check whether the extra character makes this a compound operator or not.
                 bool compound_operator_found = false;
-                if (special_operator_found && count <= line.size()) // note: maybe add count <= line.size() here
+                if (special_operator_found && count <= line.size())
                 {
                     // Find out if adding the next character onto the current substring
                     // will be a compound operator
                     std::string next_substr = line.substr(current_char, count + 1);
-
                     for (const std::string& compound_operator : compound_operators)
                     {
                         if (next_substr == compound_operator)
@@ -345,8 +360,10 @@ int main(int argc, char* argv[])
                     }
                 }
                 
+                // Write the token and lexeme to the output file
                 output_file_stream << std::setw(20) << std::left << result.token << ' ' << result.lexeme << '\n';
                 
+                // Move the current_char to the next potential token and set reading count back to 1 
                 if (!compound_operator_found) current_char += count;
                 else                          current_char += count + 1;
                 count = 1;
