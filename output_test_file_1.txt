@@ -1,0 +1,14 @@
+token               lexeme
+---------------------------
+keyword              if
+separator            (
+identifier           valueFound
+operator             !=
+real                 100.346948
+separator            )
+keyword              write
+separator            (
+identifier           valueFound
+separator            )
+separator            ;
+keyword              fi
