@@ -1,7 +1,12 @@
 /*
     
+    CPSC 323
     Assignment 1 : Lexical Analyzer
+    Description: A lexer that divides up source code, written in Rat26S, into meaningful units and writes
+                 these generated tokens into a desired output text file.
+
     Members: Mason Jennings, Gabriel Apodaca, Anthony Jimenez
+    
     Submission Date: 3/1/2026
     Due Date: 3/1/2026
     Chosen Language: C++
