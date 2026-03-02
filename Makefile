@@ -1,20 +1,17 @@
-CXX = clang++
+CXX = g++
 CXXFLAGS =  -Wall -Wextra -std=c++23
 
-TARGET = main
-SOURCES = main.cpp lexer.cpp
-OBJECTS = main.o lexer.o
+TARGET = lexical_analyzer
+SOURCES = lexical_analyzer.cpp
+OBJECTS = lexical_analyzer.o
 
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS)
 
-main.o: main.cpp lexer.h
-	$(CXX) $(CXXFLAGS) -c main.cpp
-
-lexer.o: lexer.cpp lexer.h
-	$(CXX) $(CXXFLAGS) -c lexer.cpp
+lexical_analyzer.o: lexical_analyzer.cpp fsm.hpp
+	$(CXX) $(CXXFLAGS) -c lexical_analyzer.cpp
 
 clean:
 	rm -f $(TARGET) $(OBJECTS)
