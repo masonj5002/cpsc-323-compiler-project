@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
     std::vector<std::string> arguments{argv, argv + argc};
     if (arguments.size() != 3)
     {
-        std::cout << "Error: usage: ./executable \"input_file_name.txt\" \"output_file_name.txt\"";
+        std::cerr << "Error: usage: ./executable.exe \"input_file_name.txt\" \"output_file_name.txt\"";
         return -1;
     }
 
@@ -138,12 +138,12 @@ int main(int argc, char* argv[])
     
     if (!input_file_stream.is_open() || !output_file_stream.is_open())
     {
-        std::cout << "Error while creating file streams for " << INPUT_FILE_NAME << " and " << OUTPUT_FILE_NAME << '\n';
+        std::cerr << "Error while creating file streams for " << INPUT_FILE_NAME << " and " << OUTPUT_FILE_NAME << '\n';
         return -1;
     }
 
 
-    // Set up lexicon for lexical analzyer
+    // Set up lexicon for lexical analyzer
     std::vector<std::string> separators = { "@", "(", ")", ",", "{", "}", ";"};
     std::vector<std::string> keywords   = { "function", "integer", "boolean", "real", "if", "fi", "otherwise", "return", "write", "read", "while", "true", "false"};
     std::vector<std::string> operators  = { "=", "+", "-", "*", "/", "==", "!=", ">", "<", "<=", "=>"};

@@ -1,0 +1,20 @@
+@
+/* Determines if a is greater than b */
+function greater_than(a real, b real)
+{
+    if (a > b)
+        return true;
+    otherwise
+        return false;
+    fi
+}
+@
+    real test_value_1, test_value_2; /* real Declarations */
+    integer i; /* integer Declarations */
+@
+
+    read(test_value_1, test_value_2);
+    if (greater_than(test_value_1, test_value_2))
+        write(test_value_1);
+    fi
+@

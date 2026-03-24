@@ -1,0 +1,31 @@
+@
+/*
+    Calculates the sum of two integers a and b.
+*/
+function calculate_sum(a integer, b integer)
+{
+    return a + b;
+}
+
+/*
+    Calculates the quotient of two integers a and b.
+*/
+function calculate_quotient(a integer, b integer)
+{
+    if (b == 0)
+        return -1.0;
+    fi
+
+    return a / b;
+}
+
+@
+    integer x, y, z; /* Variables for our experiment */
+@
+    read(x, y, z);
+    write(x);
+    write(y);
+    write(z);
+    write(calculate_sum(x, y));
+    write(calculate_quotient(y, z));
+@
