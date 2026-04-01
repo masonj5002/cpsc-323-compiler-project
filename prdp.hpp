@@ -35,9 +35,9 @@ class Rat26SParser
   std::ofstream&      m_output_file_stream;
   bool                m_print_productions;
   int                 m_current_token_index;
-  Record&             m_current_record = m_records[m_current_token_index];
 
  public:
+ 
     Rat26SParser(const std::vector<Record>& records, std::ofstream& output_file_stream, bool print_productions=true)
      : m_records(records),
        m_output_file_stream(output_file_stream),
@@ -45,16 +45,21 @@ class Rat26SParser
        m_current_token_index(0)
      {}
 
-    
+    const Record& get_current_record() const { return m_records[m_current_token_index]; }
+
     void parse_to_file()
     {
         Rat26S();
     }
 
+    void write_production(const std::string& production)
+    {
+            m_output_file_stream << production;
+    }
+    
     void output_current_token()
     {
-        m_output_file_stream << std::setw(20) << std::left << m_current_record.token << ' ' << m_current_record.lexeme << '\n';
-        // ++m_current_token_index;
+        m_output_file_stream << "Token: " << std::setw(20) << std::left << get_current_record().token << "Lexeme: " << get_current_record().lexeme << '\n';
     }
 
     void consume_token()
@@ -64,37 +69,38 @@ class Rat26SParser
     
     void output_error()
     {
+        m_output_file_stream << "ERROR!!!!! RAT26S\n";
+        m_output_file_stream << "Token: " << std::setw(10) << std::left << get_current_record().token << ' ' << "Lexeme: " << get_current_record().lexeme << '\n';
         std::cerr << "ERROR!!!!! RAT26S\n";
     }
 
-    bool Rat26S()
+    void Rat26S()
     {
-
         if (m_print_productions)
-            m_output_file_stream << "<Rat26S> ::= @ <Opt Function Definitions> @ <Opt Declaration List> @ <Statement List> @\n";
+            write_production("<Rat26S> ::= @ <Opt Function Definitions> @ <Opt Declaration List> @ <Statement List> @\n");
         
-        if (m_current_record.lexeme == "@")
+        if (get_current_record().lexeme == "@")
         {
             output_current_token();
             consume_token();
 
             Opt_Function_Definitions();
 
-            if (m_current_record.lexeme == "@")
+            if (get_current_record().lexeme == "@")
             {
                 output_current_token();
                 consume_token();
 
                 Opt_Declaration_List();
 
-                if (m_current_record.lexeme == "@")
+                if (get_current_record().lexeme == "@")
                 {
                     output_current_token();
                     consume_token();
 
                     Statement_List();
 
-                    if (m_current_record.lexeme == "@")
+                    if (get_current_record().lexeme == "@")
                     {
                         output_current_token();
                         consume_token();
@@ -107,7 +113,7 @@ class Rat26SParser
         }
         else output_error();
 
-        if (m_current_record.token != "eof")
+        if (get_current_record().token != "eof")
         {
             output_error();
         }
@@ -117,9 +123,9 @@ class Rat26SParser
     {
 
         if (m_print_productions)
-            m_output_file_stream << "<Opt Function Definitions> ::= <Function Definitions> | <Empty>\n";
+            write_production("<Opt Function Definitions> ::= <Function Definitions> | <Empty>\n");
 
-        if (m_current_record.lexeme == "function")
+        if (get_current_record().lexeme == "function")
         {
             Function_Definitions();
         }
@@ -129,7 +135,7 @@ class Rat26SParser
     void Function_Definitions()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Function Definitions> ::= <Function> <Function Definitions Prime>\n";
+            write_production("<Function Definitions> ::= <Function> <Function Definitions Prime>\n");
         
         Function();
         Function_Definitions_Prime();
@@ -138,9 +144,9 @@ class Rat26SParser
     void Function_Definitions_Prime()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Function Definitions Prime> ::= <Empty> | <Function Definitions>\n";
+            write_production("<Function Definitions Prime> ::= <Empty> | <Function Definitions>\n");
         
-        if (m_current_record.lexeme == "function")
+        if (get_current_record().lexeme == "function")
         {
             // output_current_token();
             // consume_token();
@@ -153,23 +159,23 @@ class Rat26SParser
     void Function()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Function> ::= function <Identifier> ( <Opt Parameter List> ) <Opt Declaration List> <Body>\n";
+            write_production("<Function> ::= function <Identifier> ( <Opt Parameter List> ) <Opt Declaration List> <Body>\n");
         
-        if (m_current_record.lexeme == "function")
+        if (get_current_record().lexeme == "function")
         {
             output_current_token();
             consume_token();
             
             Identifier();
             
-            if (m_current_record.lexeme == "(")
+            if (get_current_record().lexeme == "(")
             {
                 output_current_token();
                 consume_token();
 
                 Opt_Parameter_List();
 
-                if (m_current_record.lexeme == ")")
+                if (get_current_record().lexeme == ")")
                 {
                     output_current_token();
                     consume_token();
@@ -184,18 +190,22 @@ class Rat26SParser
         else output_error();
     }
 
-    bool Opt_Parameter_List()
+    void Opt_Parameter_List()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Opt Parameter List> ::= <Parameter List> | <Empty>\n";
+            write_production("<Opt Parameter List> ::= <Parameter List> | <Empty>\n");
 
-        
+        if (get_current_record().token == "identifier")
+        {
+            Parameter_List();
+        }
+        // epsilon because nothing can happen
     }
 
     void Parameter_List()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Parameter List> ::= <Parameter> <Parameter List Prime>\n";
+            write_production("<Parameter List> ::= <Parameter> <Parameter List Prime>\n");
         
         Parameter();
         Parameter_List_Prime();
@@ -206,9 +216,9 @@ class Rat26SParser
     void Parameter_List_Prime()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Parameter List Prime> ::= <Empty> | , <Parameter List>\n";
+            write_production("<Parameter List Prime> ::= <Empty> | , <Parameter List>\n");
 
-        if (m_current_record.lexeme == ",")
+        if (get_current_record().lexeme == ",")
         {
             output_current_token();
             consume_token();
@@ -220,7 +230,7 @@ class Rat26SParser
     void Parameter()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Parameter> ::= <IDs> <Qualifier>\n";
+            write_production("<Parameter> ::= <IDs> <Qualifier>\n");
         
         IDs();
         Qualifier();
@@ -229,9 +239,9 @@ class Rat26SParser
     void Qualifier()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Qualifier> ::= integer | boolean | real\n";
+            write_production("<Qualifier> ::= integer | boolean | real\n");
         
-        if (m_current_record.lexeme == "integer" || m_current_record.lexeme == "boolean" || m_current_record.lexeme == "real")
+        if (get_current_record().lexeme == "integer" || get_current_record().lexeme == "boolean" || get_current_record().lexeme == "real")
         {
             output_current_token();
             consume_token();
@@ -242,16 +252,16 @@ class Rat26SParser
     void Body()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Body> ::= { < Statement List> }\n";
+            write_production("<Body> ::= { < Statement List> }\n");
         
-        if (m_current_record.lexeme == "{")
+        if (get_current_record().lexeme == "{")
         {
             output_current_token();
             consume_token();
 
             Statement_List();
 
-            if (m_current_record.lexeme == "}")
+            if (get_current_record().lexeme == "}")
             {
                 output_current_token();
                 consume_token();
@@ -265,15 +275,14 @@ class Rat26SParser
     void Opt_Declaration_List()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Opt Declaration List> ::= <Declaration List> | <Empty>\n";
+            write_production("<Opt Declaration List> ::= <Declaration List> | <Empty>\n");
 
         std::vector<std::string> first_set_of_opt_declaration_list = {"integer", "boolean", "real"}; // technically epsilon as well but we don't count that
         
         for (const auto& terminal : first_set_of_opt_declaration_list)
         {
-            if (m_current_record.lexeme == terminal)
+            if (get_current_record().lexeme == terminal)
             {
-                output_current_token();
                 Declaration_List();
             } // epsilon is allowed here, aka nothing happens
         }
@@ -283,11 +292,11 @@ class Rat26SParser
     void Declaration_List()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Declaration List> ::= <Declaration> ; <Declaration List Prime>\n";
+            write_production("<Declaration List> ::= <Declaration> ; <Declaration List Prime>\n");
             
         Declaration();
 
-        if (m_current_record.lexeme == ";")
+        if (get_current_record().lexeme == ";")
         {
             output_current_token();
             consume_token();
@@ -302,9 +311,9 @@ class Rat26SParser
     void Declaration_List_Prime()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Declaration List Prime> ::= <Empty> | <Declaration List>\n";
+            write_production("<Declaration List Prime> ::= <Empty> | <Declaration List>\n");
         
-        if (m_current_record.lexeme == "integer" || m_current_record.lexeme == "boolean" || m_current_record.lexeme == "real")
+        if (get_current_record().lexeme == "integer" || get_current_record().lexeme == "boolean" || get_current_record().lexeme == "real")
         {
             // output_current_token();
 
@@ -317,7 +326,7 @@ class Rat26SParser
     void Declaration()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Declaration> ::= <Qualifier> <IDs>\n";
+            write_production("<Declaration> ::= <Qualifier> <IDs>\n");
 
         Qualifier();
         IDs();
@@ -326,7 +335,7 @@ class Rat26SParser
     void IDs()
     {
         if (m_print_productions)
-            m_output_file_stream << "<IDs> ::= <Identifier> <IDs Prime>\n";
+            write_production("<IDs> ::= <Identifier> <IDs Prime>\n");
         
         Identifier();
         IDs_Prime();
@@ -335,9 +344,9 @@ class Rat26SParser
     void IDs_Prime()
     {
         if (m_print_productions)
-            m_output_file_stream << "<IDs Prime> ::= <Empty> | , <IDs>\n";
+            write_production("<IDs Prime> ::= <Empty> | , <IDs>\n");
 
-        if (m_current_record.lexeme == ",")
+        if (get_current_record().lexeme == ",")
         {
             output_current_token();
             consume_token();
@@ -349,7 +358,7 @@ class Rat26SParser
     void Statement_List()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Statement List> ::= <Statement> <Statement List Prime>\n";
+            write_production("<Statement List> ::= <Statement> <Statement List Prime>\n");
         
         Statement();
         Statement_List_Prime();
@@ -358,54 +367,66 @@ class Rat26SParser
     void Statement_List_Prime()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Statement List Prime> ::= <Empty> | <Statement List>\n";
+            write_production("<Statement List Prime> ::= <Empty> | <Statement List>\n");
 
         std::vector<std::string> first_set_of_statement_list_prime = {"{", "identifier", "if", "return", "write", "read", "while"};
 
         for (const auto& terminal : first_set_of_statement_list_prime)
         {
-            if (m_current_record.lexeme == terminal || m_current_record.token == "identifier")
+            if (get_current_record().lexeme == terminal || get_current_record().token == "identifier")
             {
-                output_current_token();
-                consume_token();
                 Statement_List();
+                break;
             }
         }
         // epsilon is okay here
     }
 
-    bool Statement()
+    void Statement()
     {
-        if (m_print_productions)
-             m_output_file_stream << "<Statement> -> <Assign>\n";
+        // if (m_print_productions)
+        //      write_production("<Statement> ::= <Compound> | <Assign> | <If> | <Return> | <Print> | <Scan> | <While>\n");
 
-             
-        if (m_current_record.lexeme == "{")
+        if (get_current_record().lexeme == "{")
         {
+            if (m_print_productions) write_production("<Statement> ::= <Compound>\n");
+            output_current_token();
             Compound();
         }
-        else if (m_current_record.token == "identifier")
+        else if (get_current_record().token == "identifier")
         {
+            if (m_print_productions) write_production("<Statement> ::= <Assign>\n");
+            output_current_token();
             Assign();
         }
-        else if (m_current_record.lexeme == "if")
+        else if (get_current_record().lexeme == "if")
         {
+            if (m_print_productions) write_production("<Statement> ::= <If>\n");
+            output_current_token();
             If();
         }
-        else if (m_current_record.lexeme == "return")
+        else if (get_current_record().lexeme == "return")
         {
+            if (m_print_productions) write_production("<Statement> ::= <Return>\n");
+            output_current_token();
             Return();
         }
-        else if (m_current_record.lexeme == "write")
+        else if (get_current_record().lexeme == "write")
         {
+            if (m_print_productions) write_production("<Statement> ::= <Print>\n");
+            output_current_token();
             Print();
         }
-        else if (m_current_record.lexeme == "read")
+        else if (get_current_record().lexeme == "read")
         {
+            if (m_print_productions) write_production("<Statement> ::= <Scan>\n");
+            output_current_token();
             Scan();
         }
-        else if (m_current_record.lexeme == "while")
+        else if (get_current_record().lexeme == "while")
         {
+            if (m_print_productions) write_production("<Statement> ::= <While>\n");
+            output_current_token();
             While();
         }
         else
@@ -413,22 +434,21 @@ class Rat26SParser
             output_error();
         }
 
-        return false;
     }
 
     void Compound()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Compound> ::= { <Statement List> }\n";
+            write_production("<Compound> ::= { <Statement List> }\n");
 
-        if (m_current_record.lexeme == "{")
+        if (get_current_record().lexeme == "{")
         {
             output_current_token();
             consume_token();
 
             Statement_List();
 
-            if (m_current_record.lexeme == "}")
+            if (get_current_record().lexeme == "}")
             {
                 output_current_token();
                 consume_token();
@@ -441,40 +461,41 @@ class Rat26SParser
     void Assign()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Assign> ::= <Identifier> = <Expression>;\n";
+            write_production("<Assign> ::= <Identifier> = <Expression>;\n");
 
         Identifier();
 
-        if (m_current_record.lexeme == "=")
+        if (get_current_record().lexeme == "=")
         {
             output_current_token();
+            consume_token();
+            
             Expression();
         }
         else
         {
             output_error();
         }
-        
     }
 
     void If()
     {
         if (m_print_productions)
-            m_output_file_stream << "<If> ::= if ( <Condition> ) <Statement> <If Prime>\n";
+            write_production("<If> ::= if ( <Condition> ) <Statement> <If Prime>\n");
         
-        if (m_current_record.lexeme == "if")
+        if (get_current_record().lexeme == "if")
         {
             output_current_token();
             consume_token();
 
-            if (m_current_record.lexeme == "(")
+            if (get_current_record().lexeme == "(")
             {
                 output_current_token();
                 consume_token();
 
                 Condition();
 
-                if (m_current_record.lexeme == ")")
+                if (get_current_record().lexeme == ")")
                 {
                     output_current_token();
                     consume_token();
@@ -492,21 +513,21 @@ class Rat26SParser
     void If_Prime()
     {
         if (m_print_productions)
-            m_output_file_stream << "<If Prime> ::= fi | otherwise <Statement> fi\n";
+            write_production("<If Prime> ::= fi | otherwise <Statement> fi\n");
         
-        if (m_current_record.lexeme == "fi")
+        if (get_current_record().lexeme == "fi")
         {
             output_current_token();
             consume_token();
         }
-        else if (m_current_record.lexeme == "otherwise")
+        else if (get_current_record().lexeme == "otherwise")
         {
             output_current_token();
             consume_token();
 
             Statement();
 
-            if (m_current_record.lexeme == "fi")
+            if (get_current_record().lexeme == "fi")
             {
                 output_current_token();
                 consume_token();
@@ -519,9 +540,9 @@ class Rat26SParser
     void Return()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Return> ::= return <Return Prime>\n";
+            write_production("<Return> ::= return <Return Prime>\n");
 
-        if (m_current_record.lexeme == "return")
+        if (get_current_record().lexeme == "return")
         {
             output_current_token();
             consume_token();
@@ -534,7 +555,7 @@ class Rat26SParser
     void Return_Prime()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Return Prime> ::= ; | <Expression>\n";
+            write_production("<Return Prime> ::= ; | <Expression>\n");
 
 
         std::vector<std::string> first_set_of_expression = {"-", "identifier", "integer", "(", "real", "true", "false"};
@@ -542,13 +563,14 @@ class Rat26SParser
         bool token_is_in_first_set = false;
         for (const auto& terminal : first_set_of_expression)
         {
-            if (m_current_record.lexeme == terminal || m_current_record.token == terminal)
+            if (get_current_record().lexeme == terminal || get_current_record().token == terminal)
             {
                 token_is_in_first_set = true;
+                break;
             }
         }
 
-        if (m_current_record.lexeme == ";")
+        if (get_current_record().lexeme == ";")
         {
             output_current_token();
             consume_token();
@@ -557,32 +579,40 @@ class Rat26SParser
         {
             // output_current_token();
             Expression();
+
+            if (get_current_record().lexeme == ";")
+            {
+                output_current_token();
+                consume_token();
+            }
+            else output_error();
         }
+        else output_error();
     }
 
     void Print()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Print> ::= write ( <Expression> );\n";
+            write_production("<Print> ::= write ( <Expression> );\n");
         
-        if (m_current_record.lexeme == "write")
+        if (get_current_record().lexeme == "write")
         {
             output_current_token();
             consume_token();
 
-            if (m_current_record.lexeme == "(")
+            if (get_current_record().lexeme == "(")
             {
                 output_current_token();
                 consume_token();
 
                 Expression();
 
-                if (m_current_record.lexeme == ")")
+                if (get_current_record().lexeme == ")")
                 {
                     output_current_token();
                     consume_token();
 
-                    if (m_current_record.lexeme == ";")
+                    if (get_current_record().lexeme == ";")
                     {
                         output_current_token();
                         consume_token();
@@ -599,26 +629,26 @@ class Rat26SParser
     void Scan()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Scan> ::= read ( <IDs> );\n";
+            write_production("<Scan> ::= read ( <IDs> );\n");
         
-        if (m_current_record.lexeme == "read")
+        if (get_current_record().lexeme == "read")
         {
             output_current_token();
             consume_token();
 
-            if (m_current_record.lexeme == "(")
+            if (get_current_record().lexeme == "(")
             {
                 output_current_token();
                 consume_token();
 
                 IDs();
 
-                if (m_current_record.lexeme == ")")
+                if (get_current_record().lexeme == ")")
                 {
                     output_current_token();
                     consume_token();
 
-                    if (m_current_record.lexeme == ";")
+                    if (get_current_record().lexeme == ";")
                     {
                         output_current_token();
                         consume_token();
@@ -631,20 +661,20 @@ class Rat26SParser
     void While()
     {
         if (m_print_productions)
-            m_output_file_stream << "<While> ::= while ( <Condition> ) <Statement>\n";
+            write_production("<While> ::= while ( <Condition> ) <Statement>\n");
         
-        if (m_current_record.lexeme == "while")
+        if (get_current_record().lexeme == "while")
         {
             output_current_token();
             consume_token();
 
-            if (m_current_record.lexeme == "(")
+            if (get_current_record().lexeme == "(")
             {
                 output_current_token();
                 consume_token();
                 Condition();
 
-                if (m_current_record.lexeme == ")")
+                if (get_current_record().lexeme == ")")
                 {
                     output_current_token();
                     consume_token();
@@ -661,7 +691,7 @@ class Rat26SParser
     void Condition()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Condition> ::= <Expression> <Relop> <Expression>\n";
+            write_production("<Condition> ::= <Expression> <Relop> <Expression>\n");
         
         Expression();
         Relop();
@@ -671,13 +701,13 @@ class Rat26SParser
     void Relop()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Relop> ::= == | != | > | < | <= | =>\n";
+            write_production("<Relop> ::= == | != | > | < | <= | =>\n");
 
         std::vector<std::string> terminals = {"==", "!=", ">", "<", "<=", "=>"};
 
         for (const auto& terminal : terminals)
         {
-            if (m_current_record.lexeme == terminal)
+            if (get_current_record().lexeme == terminal)
             {
                 output_current_token();
                 consume_token();
@@ -689,26 +719,25 @@ class Rat26SParser
     void Expression()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Expression> ::= <Term> <Expression Prime>\n";
+            write_production("<Expression> ::= <Term> <Expression Prime>\n");
 
         Term();
         Expression_Prime();
-
     }
 
     void Expression_Prime()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Expression Prime> ::= + <Term> <Expression Prime> | - <Term> <Expression Prime> | <Empty>\n";
+            write_production("<Expression Prime> ::= + <Term> <Expression Prime> | - <Term> <Expression Prime> | <Empty>\n");
         
-        if (m_current_record.lexeme == "+")
+        if (get_current_record().lexeme == "+")
         {
             output_current_token();
             consume_token();
             Term();
             Expression_Prime();
         }
-        else if (m_current_record.lexeme == "-")
+        else if (get_current_record().lexeme == "-")
         {
             output_current_token();
             consume_token();
@@ -720,7 +749,7 @@ class Rat26SParser
     void Term()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Term> ::= <Factor> <Term Prime>\n";
+            write_production("<Term> ::= <Factor> <Term Prime>\n");
         
         Factor();
         Term_Prime();
@@ -729,16 +758,16 @@ class Rat26SParser
     void Term_Prime()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Term Prime> ::= * <Factor> <Term Prime> | / <Factor> <Term Prime> | <Empty>\n";
+            write_production("<Term Prime> ::= * <Factor> <Term Prime> | / <Factor> <Term Prime> | <Empty>\n");
         
-        if (m_current_record.lexeme == "*")
+        if (get_current_record().lexeme == "*")
         {
             output_current_token();
             consume_token();
             Factor();
             Term_Prime();
         }
-        else if (m_current_record.lexeme == "/")
+        else if (get_current_record().lexeme == "/")
         {
             output_current_token();
             consume_token();
@@ -751,9 +780,9 @@ class Rat26SParser
     void Factor()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Factor> ::= - <Primary> | <Primary>\n";
+            write_production("<Factor> ::= - <Primary> | <Primary>\n");
         
-        if (m_current_record.lexeme == "-")
+        if (get_current_record().lexeme == "-")
         {
             output_current_token();
             consume_token();
@@ -769,37 +798,37 @@ class Rat26SParser
     void Primary()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Primary> ::= <Identifier> <Primary Prime> | <Integer> | ( <Expression> ) | <Real> | true | false\n";
+            write_production("<Primary> ::= <Identifier> <Primary Prime> | <Integer> | ( <Expression> ) | <Real> | true | false\n");
         
-        if (m_current_record.token == "identifier")
+        if (get_current_record().token == "identifier")
         {
             //maybe you print here, and the consumption is done later
             output_current_token();
             Identifier();
             Primary_Prime();
         }
-        else if (m_current_record.token == "integer")
+        else if (get_current_record().token == "integer")
         {
             Integer();
         }
-        else if (m_current_record.lexeme == "(")
+        else if (get_current_record().lexeme == "(")
         {
             output_current_token();
             consume_token();
             Expression();
 
-            if (m_current_record.lexeme == ")")
+            if (get_current_record().lexeme == ")")
             {
                 output_current_token();
                 consume_token();
             }
             else output_error();
         }
-        else if (m_current_record.token == "real")
+        else if (get_current_record().token == "real")
         {
             Real();
         }
-        else if (m_current_record.lexeme == "true" || m_current_record.lexeme == "false")
+        else if (get_current_record().lexeme == "true" || get_current_record().lexeme == "false")
         {
             output_current_token();
             consume_token();
@@ -813,15 +842,15 @@ class Rat26SParser
     void Primary_Prime()
     {
         if (m_print_productions)
-            m_output_file_stream << "<Primary Prime> ::= ( IDs ) | <Empty>\n";
+            write_production("<Primary Prime> ::= ( IDs ) | <Empty>\n");
 
-        if (m_current_record.lexeme == "(")
+        if (get_current_record().lexeme == "(")
         {
             output_current_token();
             consume_token();
             IDs();
 
-            if (m_current_record.lexeme == ")")
+            if (get_current_record().lexeme == ")")
             {
                 output_current_token();
                 consume_token();
@@ -830,16 +859,16 @@ class Rat26SParser
         }
     }
 
-    bool Empty()
-    {
+    // bool Empty()
+    // {
 
-        return false;
-    }
+    //     return false;
+    // }
 
     void Identifier()
     {
 
-        if (m_current_record.token == "identifier")
+        if (get_current_record().token == "identifier")
         {
             consume_token();
         }
@@ -852,7 +881,7 @@ class Rat26SParser
     void Integer()
     {
 
-        if (m_current_record.token == "integer")
+        if (get_current_record().token == "integer")
         {
             consume_token();
         }
@@ -865,7 +894,7 @@ class Rat26SParser
     void Real()
     {
 
-        if (m_current_record.token == "real")
+        if (get_current_record().token == "real")
         {
             consume_token();
         }

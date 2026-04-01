@@ -5,7 +5,7 @@
 #include <fstream>
 
 #include "lexical_analyzer.hpp"
-// #include "prdp.hpp"
+#include "prdp.hpp"
 
 using namespace lexical_analysis;
 // using namespace Rat26SGrammar;
