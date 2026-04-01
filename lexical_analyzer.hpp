@@ -20,11 +20,12 @@ namespace lexical_analysis
      */
     struct Record
     {
-    Record() : token{""}, lexeme{""} {}
-    Record(const std::string& token, const std::string& lexeme) : token{token}, lexeme{lexeme} {}
+    Record() : token{""}, lexeme{""}, line{0} {}
+    Record(const std::string& token, const std::string& lexeme, const unsigned long int & line) : token{token}, lexeme{lexeme}, line{line} {}
 
     std::string token;
     std::string lexeme;
+    unsigned long int line;
     };
 
     
@@ -38,7 +39,7 @@ namespace lexical_analysis
      */
     Record lexer(const std::string& input_string)
     {
-        Record result("unknown", input_string);
+        Record result("unknown", input_string, 0);
 
         std::vector<std::string> separators = { "@", "(", ")", ",", "{", "}", ";"};
         std::vector<std::string> keywords   = { "function", "integer", "boolean", "real", "if", "fi", "otherwise", "return", "write", "read", "while", "true", "false"};
@@ -109,12 +110,14 @@ namespace lexical_analysis
         std::vector<std::string> special_operators  = {"=",  "!",  "<", ">"  }; // Operators that could potentially be the first character of a compound operator
 
         std::vector<Record> records;
+        unsigned long int current_line_number = 0;
 
         while (!input_file_stream.eof())
         {
             // Read a line from the input file
             std::string line;
             std::getline(input_file_stream, line, '\n');
+            ++current_line_number;
 
             int current_char = 0;
             int count = 1;        // How many characters to read from line starting from current_char.
@@ -140,6 +143,7 @@ namespace lexical_analysis
                             if (current_char >= line.size() || count >= line.size())
                             {
                                 std::getline(input_file_stream, line, '\n');
+                                ++current_line_number;
                                 current_char = 0;
                                 count = 2;
 
@@ -204,6 +208,7 @@ namespace lexical_analysis
 
                     // Write the token and lexeme to the output file
                     // output_file_stream << std::setw(20) << std::left << result.token << ' ' << result.lexeme << '\n';
+                    result.line = current_line_number;
                     records.push_back(result);
 
                     // Move the current_char to the next potential token and set reading count back to 1 
@@ -270,6 +275,7 @@ namespace lexical_analysis
 
                     // Write the token and lexeme to the output file
                     // output_file_stream << std::setw(20) << std::left << result.token << ' ' << result.lexeme << '\n';
+                    result.line = current_line_number;
                     records.push_back(result);
 
                     continue;
@@ -278,6 +284,7 @@ namespace lexical_analysis
                 {
                     // Write the token and lexeme to the output file
                     // output_file_stream << std::setw(20) << std::left << result.token << ' ' << result.lexeme << '\n';
+                    result.line = current_line_number;
                     records.push_back(result);
 
                     // Move the character pointer to the next character, set reading count to 1, and skip the
@@ -321,6 +328,7 @@ namespace lexical_analysis
                     
                     // Write the token and lexeme to the output file
                     // output_file_stream << std::setw(20) << std::left << result.token << ' ' << result.lexeme << '\n';
+                    result.line = current_line_number;
                     records.push_back(result);
                     
                     // Move the current_char to the next potential token and set reading count back to 1 
@@ -328,11 +336,22 @@ namespace lexical_analysis
                     else                          current_char += count + 1;
                     count = 1;
                     continue;
+                } else if (result.token == "unknown")
+                {
+                    result.line = current_line_number;
+                    records.push_back(result);
+                    current_char += count;
+                    continue;
                 }
                 
                 count += 1;
             }
         } 
+
+        // Add eof marker
+        ++current_line_number;
+        records.push_back(Record("eof", "$", current_line_number));
+        
         return records;
     }
 }

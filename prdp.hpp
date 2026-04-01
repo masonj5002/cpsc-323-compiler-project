@@ -59,7 +59,7 @@ class Rat26SParser
     
     void output_current_token()
     {
-        m_output_file_stream << "Token: " << std::setw(20) << std::left << get_current_record().token << "Lexeme: " << get_current_record().lexeme << '\n';
+        m_output_file_stream << "\nToken: " << std::setw(20) << std::left << get_current_record().token << "Lexeme: " << get_current_record().lexeme << '\n';
     }
 
     void consume_token()
@@ -69,9 +69,7 @@ class Rat26SParser
     
     void output_error()
     {
-        m_output_file_stream << "ERROR!!!!! RAT26S\n";
-        m_output_file_stream << "Token: " << std::setw(10) << std::left << get_current_record().token << ' ' << "Lexeme: " << get_current_record().lexeme << '\n';
-        std::cerr << "ERROR!!!!! RAT26S\n";
+        m_output_file_stream << "\nSyntax Error: On line " << get_current_record().line << " with Token: " << get_current_record().token << " and Lexeme: " << get_current_record().lexeme << "\n\n";
     }
 
     void Rat26S()
@@ -127,6 +125,7 @@ class Rat26SParser
 
         if (get_current_record().lexeme == "function")
         {
+            output_current_token();
             Function_Definitions();
         }
         // epsilon allowed here
@@ -163,9 +162,11 @@ class Rat26SParser
         
         if (get_current_record().lexeme == "function")
         {
-            output_current_token();
             consume_token();
             
+            if (get_current_record().token == "identifier")
+                output_current_token();
+
             Identifier();
             
             if (get_current_record().lexeme == "(")
@@ -209,8 +210,6 @@ class Rat26SParser
         
         Parameter();
         Parameter_List_Prime();
-
-        
     }
 
     void Parameter_List_Prime()
@@ -231,7 +230,7 @@ class Rat26SParser
     {
         if (m_print_productions)
             write_production("<Parameter> ::= <IDs> <Qualifier>\n");
-        
+
         IDs();
         Qualifier();
     }
@@ -337,6 +336,9 @@ class Rat26SParser
         if (m_print_productions)
             write_production("<IDs> ::= <Identifier> <IDs Prime>\n");
         
+        if (get_current_record().token == "identifier")
+            output_current_token();
+        
         Identifier();
         IDs_Prime();
     }
@@ -344,7 +346,7 @@ class Rat26SParser
     void IDs_Prime()
     {
         if (m_print_productions)
-            write_production("<IDs Prime> ::= <Empty> | , <IDs>\n");
+            write_production("<IDs Prime> ::= , <IDs> | <Empty>\n");
 
         if (get_current_record().lexeme == ",")
         {
@@ -367,7 +369,7 @@ class Rat26SParser
     void Statement_List_Prime()
     {
         if (m_print_productions)
-            write_production("<Statement List Prime> ::= <Empty> | <Statement List>\n");
+            write_production("<Statement List Prime> ::= <Statement List> | <Empty>\n");
 
         std::vector<std::string> first_set_of_statement_list_prime = {"{", "identifier", "if", "return", "write", "read", "while"};
 
@@ -389,44 +391,44 @@ class Rat26SParser
 
         if (get_current_record().lexeme == "{")
         {
-            if (m_print_productions) write_production("<Statement> ::= <Compound>\n");
             output_current_token();
+            if (m_print_productions) write_production("<Statement> ::= <Compound>\n");
             Compound();
         }
         else if (get_current_record().token == "identifier")
         {
-            if (m_print_productions) write_production("<Statement> ::= <Assign>\n");
             output_current_token();
+            if (m_print_productions) write_production("<Statement> ::= <Assign>\n");
             Assign();
         }
         else if (get_current_record().lexeme == "if")
         {
-            if (m_print_productions) write_production("<Statement> ::= <If>\n");
             output_current_token();
+            if (m_print_productions) write_production("<Statement> ::= <If>\n");
             If();
         }
         else if (get_current_record().lexeme == "return")
         {
-            if (m_print_productions) write_production("<Statement> ::= <Return>\n");
             output_current_token();
+            if (m_print_productions) write_production("<Statement> ::= <Return>\n");
             Return();
         }
         else if (get_current_record().lexeme == "write")
         {
-            if (m_print_productions) write_production("<Statement> ::= <Print>\n");
             output_current_token();
+            if (m_print_productions) write_production("<Statement> ::= <Print>\n");
             Print();
         }
         else if (get_current_record().lexeme == "read")
         {
-            if (m_print_productions) write_production("<Statement> ::= <Scan>\n");
             output_current_token();
+            if (m_print_productions) write_production("<Statement> ::= <Scan>\n");
             Scan();
         }
         else if (get_current_record().lexeme == "while")
         {
-            if (m_print_productions) write_production("<Statement> ::= <While>\n");
             output_current_token();
+            if (m_print_productions) write_production("<Statement> ::= <While>\n");
             While();
         }
         else
@@ -485,7 +487,6 @@ class Rat26SParser
         
         if (get_current_record().lexeme == "if")
         {
-            output_current_token();
             consume_token();
 
             if (get_current_record().lexeme == "(")
@@ -544,7 +545,6 @@ class Rat26SParser
 
         if (get_current_record().lexeme == "return")
         {
-            output_current_token();
             consume_token();
 
             Return_Prime();
@@ -597,7 +597,6 @@ class Rat26SParser
         
         if (get_current_record().lexeme == "write")
         {
-            output_current_token();
             consume_token();
 
             if (get_current_record().lexeme == "(")
@@ -633,7 +632,6 @@ class Rat26SParser
         
         if (get_current_record().lexeme == "read")
         {
-            output_current_token();
             consume_token();
 
             if (get_current_record().lexeme == "(")
@@ -704,15 +702,22 @@ class Rat26SParser
             write_production("<Relop> ::= == | != | > | < | <= | =>\n");
 
         std::vector<std::string> terminals = {"==", "!=", ">", "<", "<=", "=>"};
-
+        
+        bool terminal_found = false;
         for (const auto& terminal : terminals)
         {
             if (get_current_record().lexeme == terminal)
             {
                 output_current_token();
                 consume_token();
+                terminal_found = true;
                 break;
             }
+        }
+
+        if (!terminal_found)
+        {
+            output_error();
         }
     }
 
@@ -809,12 +814,14 @@ class Rat26SParser
         }
         else if (get_current_record().token == "integer")
         {
+            output_current_token();
             Integer();
         }
         else if (get_current_record().lexeme == "(")
         {
             output_current_token();
             consume_token();
+
             Expression();
 
             if (get_current_record().lexeme == ")")
@@ -826,6 +833,7 @@ class Rat26SParser
         }
         else if (get_current_record().token == "real")
         {
+            output_current_token();
             Real();
         }
         else if (get_current_record().lexeme == "true" || get_current_record().lexeme == "false")

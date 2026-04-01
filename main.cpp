@@ -62,16 +62,21 @@ int main(int argc, char* argv[])
 
     // List that holds the results of the lexical analyzer
     std::vector<Record> records = lexical_analyzer(input_file_stream);
-    records.push_back(Record("eof", "$"));
     
-    // // Write everything to the output file
-    // for (const Record& record : records)
-    // {
-    //     // std::cout << std::setw(20) << std::left << record.token << ' ' << record.lexeme << '\n';
-    //     // output_file_stream << std::setw(20) << std::left << record.token << ' ' << record.lexeme << '\n';
-    //     // parse(record.token);    // <---- maybe something like this?
-    // }
+    // Write everything to the output file
+    for (const Record& record : records)
+    {
+        std::cout << std::setw(20) << std::left << record.token << ' ' << record.lexeme << '\n';
+    }
 
+    for (const Record& record : records)
+    {
+        if (record.token == "unknown")
+        {
+            std::cout << "Lexical Error: Unknown token classification on line " << record.line << " with a lexeme of: " << record.lexeme << '\n';
+        }
+    }
+    
     Rat26SParser parser(records, output_file_stream, true);
     parser.parse_to_file();
 

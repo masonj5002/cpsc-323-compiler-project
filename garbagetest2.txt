@@ -7,6 +7,8 @@ Token: keyword             Lexeme: function
 <Function Definitions> ::= <Function> <Function Definitions Prime>
 <Function> ::= function <Identifier> ( <Opt Parameter List> ) <Opt Declaration List> <Body>
 
+Token: identifier          Lexeme: calculate_sum
+
 Token: separator           Lexeme: (
 <Opt Parameter List> ::= <Parameter List> | <Empty>
 <Parameter List> ::= <Parameter> <Parameter List Prime>
@@ -64,12 +66,14 @@ Token: identifier          Lexeme: b
 <Expression Prime> ::= + <Term> <Expression Prime> | - <Term> <Expression Prime> | <Empty>
 
 Token: separator           Lexeme: ;
-<Statement List Prime> ::= <Empty> | <Statement List>
+<Statement List Prime> ::= <Statement List> | <Empty>
 
 Token: separator           Lexeme: }
 <Function Definitions Prime> ::= <Empty> | <Function Definitions>
 <Function Definitions> ::= <Function> <Function Definitions Prime>
 <Function> ::= function <Identifier> ( <Opt Parameter List> ) <Opt Declaration List> <Body>
+
+Token: identifier          Lexeme: calculate_quotient
 
 Token: separator           Lexeme: (
 <Opt Parameter List> ::= <Parameter List> | <Empty>
@@ -149,7 +153,7 @@ Token: separator           Lexeme: ;
 <If Prime> ::= fi | otherwise <Statement> fi
 
 Token: keyword             Lexeme: fi
-<Statement List Prime> ::= <Empty> | <Statement List>
+<Statement List Prime> ::= <Statement List> | <Empty>
 <Statement List> ::= <Statement> <Statement List Prime>
 
 Token: keyword             Lexeme: return
@@ -175,7 +179,7 @@ Token: identifier          Lexeme: b
 <Expression Prime> ::= + <Term> <Expression Prime> | - <Term> <Expression Prime> | <Empty>
 
 Token: separator           Lexeme: ;
-<Statement List Prime> ::= <Empty> | <Statement List>
+<Statement List Prime> ::= <Statement List> | <Empty>
 
 Token: separator           Lexeme: }
 <Function Definitions Prime> ::= <Empty> | <Function Definitions>
@@ -235,7 +239,7 @@ Token: identifier          Lexeme: z
 Token: separator           Lexeme: )
 
 Token: separator           Lexeme: ;
-<Statement List Prime> ::= <Empty> | <Statement List>
+<Statement List Prime> ::= <Statement List> | <Empty>
 <Statement List> ::= <Statement> <Statement List Prime>
 
 Token: keyword             Lexeme: write
@@ -256,7 +260,7 @@ Token: identifier          Lexeme: x
 Token: separator           Lexeme: )
 
 Token: separator           Lexeme: ;
-<Statement List Prime> ::= <Empty> | <Statement List>
+<Statement List Prime> ::= <Statement List> | <Empty>
 <Statement List> ::= <Statement> <Statement List Prime>
 
 Token: keyword             Lexeme: write
@@ -277,7 +281,7 @@ Token: identifier          Lexeme: y
 Token: separator           Lexeme: )
 
 Token: separator           Lexeme: ;
-<Statement List Prime> ::= <Empty> | <Statement List>
+<Statement List Prime> ::= <Statement List> | <Empty>
 <Statement List> ::= <Statement> <Statement List Prime>
 
 Token: keyword             Lexeme: write
@@ -298,7 +302,7 @@ Token: identifier          Lexeme: z
 Token: separator           Lexeme: )
 
 Token: separator           Lexeme: ;
-<Statement List Prime> ::= <Empty> | <Statement List>
+<Statement List Prime> ::= <Statement List> | <Empty>
 <Statement List> ::= <Statement> <Statement List Prime>
 
 Token: keyword             Lexeme: write
@@ -333,7 +337,7 @@ Token: separator           Lexeme: )
 Token: separator           Lexeme: )
 
 Token: separator           Lexeme: ;
-<Statement List Prime> ::= <Empty> | <Statement List>
+<Statement List Prime> ::= <Statement List> | <Empty>
 <Statement List> ::= <Statement> <Statement List Prime>
 
 Token: keyword             Lexeme: write
@@ -368,6 +372,6 @@ Token: separator           Lexeme: )
 Token: separator           Lexeme: )
 
 Token: separator           Lexeme: ;
-<Statement List Prime> ::= <Empty> | <Statement List>
+<Statement List Prime> ::= <Statement List> | <Empty>
 
 Token: separator           Lexeme: @
