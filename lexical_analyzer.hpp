@@ -128,7 +128,6 @@ namespace lexical_analysis
                 // Get current substring
                 std::string current_substr = line.substr(current_char, count);
 
-
                 // Skip comments 
                 if (current_substr == "/" && count <= line.size())
                 {
@@ -307,6 +306,7 @@ namespace lexical_analysis
                         }
                     }
 
+                    
                     // If we found the starting character of a compound operator, we need to read one character extra
                     // and check whether the extra character makes this a compound operator or not.
                     bool compound_operator_found = false;
@@ -336,14 +336,20 @@ namespace lexical_analysis
                     else                          current_char += count + 1;
                     count = 1;
                     continue;
-                } else if (result.token == "unknown")
+                } 
+                else if (result.token == "unknown" && std::find(special_operators.begin(), special_operators.end(), result.lexeme) == special_operators.end())
                 {
                     result.line = current_line_number;
                     records.push_back(result);
                     current_char += count;
                     continue;
                 }
-                
+
+                /*
+                maybe you can do a while and keep adding as long as the result Record is still unknown
+                (might work might not idk)
+                */
+
                 count += 1;
             }
         } 

@@ -1,0 +1,9 @@
+
+if the lexical analyzer sees '!', it thinks it is an unknown token even though it might be !=
+
+the timing for when the parser prints a token and lexeme might be off (maybe not sure)
+
+I also need to implement an Empty() function which just prints out a production with epsilon on the right hand side
+
+I also need to make it so that if a production is of the form A -> B | C | D, then the function will print out 
+which choice of B, C, or D is being used. If it is using B, then it would print A -> B. If C, then it will print A -> C, and etc.

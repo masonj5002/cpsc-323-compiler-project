@@ -23,7 +23,6 @@
 
 using namespace lexical_analysis;
 
-// Note: There are like 30 functions in this file... bruh
 
 // The naming convention is that the function's names are the nonterminals in
 // the assignment documentation for the compiler project 
@@ -35,19 +34,23 @@ class Rat26SParser
   std::ofstream&      m_output_file_stream;
   bool                m_print_productions;
   int                 m_current_token_index;
+  std::string         m_current_production;
+  std::string         m_input_file_name;
 
  public:
  
-    Rat26SParser(const std::vector<Record>& records, std::ofstream& output_file_stream, bool print_productions=true)
+    Rat26SParser(const std::vector<Record>& records, const std::string& input_file_name, std::ofstream& output_file_stream, bool print_productions=true)
      : m_records(records),
        m_output_file_stream(output_file_stream),
        m_print_productions(print_productions),
-       m_current_token_index(0)
+       m_current_token_index(0),
+       m_current_production(""),
+       m_input_file_name(input_file_name)
      {}
 
     const Record& get_current_record() const { return m_records[m_current_token_index]; }
 
-    void parse_to_file()
+    void write_productions_to_file()
     {
         Rat26S();
     }
@@ -55,6 +58,7 @@ class Rat26SParser
     void write_production(const std::string& production)
     {
             m_output_file_stream << production;
+            m_current_production = production;
     }
     
     void output_current_token()
@@ -67,9 +71,13 @@ class Rat26SParser
         ++m_current_token_index;
     }
     
-    void output_error()
+    void output_error(const std::string& expected_message)
     {
-        m_output_file_stream << "\nSyntax Error: On line " << get_current_record().line << " with Token: " << get_current_record().token << " and Lexeme: " << get_current_record().lexeme << "\n\n";
+        m_output_file_stream << "\nSyntax Error in " << m_input_file_name << " on line " << get_current_record().line << " with\n"
+                             << "\tToken       : " << get_current_record().token  << '\n'
+                             << "\tLexeme      : " << get_current_record().lexeme << '\n'
+                             << "\tExpected    : " << expected_message            << '\n'
+                             << "\tViolation of: " << m_current_production        << '\n';
     }
 
     void Rat26S()
@@ -77,8 +85,14 @@ class Rat26SParser
         if (m_print_productions)
             write_production("<Rat26S> ::= @ <Opt Function Definitions> @ <Opt Declaration List> @ <Statement List> @\n");
         
+        // This is to prevent two syntax errors being written to the output file because there is 
+        // another check at the bottom of this nonterminal function
+        bool first_check = false;
+
         if (get_current_record().lexeme == "@")
         {
+            first_check = true;
+
             output_current_token();
             consume_token();
 
@@ -103,17 +117,21 @@ class Rat26SParser
                         output_current_token();
                         consume_token();
                     }
-                    else output_error();
+                    else output_error("@");
                 }
-                else output_error();
+                else output_error("@");
             }
-            else output_error();
+            else output_error("@");
         }
-        else output_error();
+        else output_error("@");
 
-        if (get_current_record().token != "eof")
+        // If the lexeme is not @, then that means we got passed the very first check and were
+        // originally looking through the right hand side of the production for <Rat@26S>. 
+        // If it was @, then that means the very first check of the grammar failed and
+        // there is a syntax error that was already written to the output file.
+        if (first_check && get_current_record().token != "eof")
         {
-            output_error();
+            output_error("eof");
         }
     }
     
@@ -143,13 +161,10 @@ class Rat26SParser
     void Function_Definitions_Prime()
     {
         if (m_print_productions)
-            write_production("<Function Definitions Prime> ::= <Empty> | <Function Definitions>\n");
+            write_production("<Function Definitions Prime> ::= <Function Definitions> | <Empty>\n");
         
         if (get_current_record().lexeme == "function")
         {
-            // output_current_token();
-            // consume_token();
-            
             Function_Definitions();
         }
         // epsilon is allowed here
@@ -184,11 +199,11 @@ class Rat26SParser
                     Opt_Declaration_List();
                     Body();
                 }
-                else output_error();
+                else output_error(")");
             }
-            else output_error();
+            else output_error("(");
         }
-        else output_error();
+        else output_error("function");
     }
 
     void Opt_Parameter_List()
@@ -215,7 +230,7 @@ class Rat26SParser
     void Parameter_List_Prime()
     {
         if (m_print_productions)
-            write_production("<Parameter List Prime> ::= <Empty> | , <Parameter List>\n");
+            write_production("<Parameter List Prime> ::= , <Parameter List> | <Empty>\n");
 
         if (get_current_record().lexeme == ",")
         {
@@ -245,7 +260,7 @@ class Rat26SParser
             output_current_token();
             consume_token();
         }
-        else output_error();
+        else output_error("integer, boolean, or real");
     }
 
     void Body()
@@ -265,9 +280,9 @@ class Rat26SParser
                 output_current_token();
                 consume_token();
             }
-            else output_error();
+            else output_error("}");
         } 
-        else output_error();
+        else output_error("{");
         
     }
 
@@ -303,14 +318,14 @@ class Rat26SParser
         }
         else
         {
-            output_error();
+            output_error(";");
         }
     }
 
     void Declaration_List_Prime()
     {
         if (m_print_productions)
-            write_production("<Declaration List Prime> ::= <Empty> | <Declaration List>\n");
+            write_production("<Declaration List Prime> ::= <Declaration List> | <Empty>\n");
         
         if (get_current_record().lexeme == "integer" || get_current_record().lexeme == "boolean" || get_current_record().lexeme == "real")
         {
@@ -433,7 +448,7 @@ class Rat26SParser
         }
         else
         {
-            output_error();
+            output_error("statement that begins with {, an identifier, if, return, write, read, or while");
         }
 
     }
@@ -455,9 +470,9 @@ class Rat26SParser
                 output_current_token();
                 consume_token();
             }
-            else output_error();
+            else output_error("}");
         }
-        else output_error();
+        else output_error("{");
     }
 
     void Assign()
@@ -474,10 +489,7 @@ class Rat26SParser
             
             Expression();
         }
-        else
-        {
-            output_error();
-        }
+        else output_error("=");
     }
 
     void If()
@@ -504,11 +516,11 @@ class Rat26SParser
                     Statement();
                     If_Prime();
                 }
-                else output_error();
+                else output_error(")");
             }
-            else output_error();
+            else output_error("(");
         }
-        else output_error();
+        else output_error("if");
     }
 
     void If_Prime()
@@ -533,9 +545,9 @@ class Rat26SParser
                 output_current_token();
                 consume_token();
             }
-            else output_error();
+            else output_error("fi");
         }
-        else output_error();
+        else output_error("fi or otherwise");
     }
 
     void Return()
@@ -549,7 +561,7 @@ class Rat26SParser
 
             Return_Prime();
         }
-        else output_error();
+        else output_error("return");
     }
 
     void Return_Prime()
@@ -585,9 +597,9 @@ class Rat26SParser
                 output_current_token();
                 consume_token();
             }
-            else output_error();
+            else output_error(";");
         }
-        else output_error();
+        else output_error("expression that starts with -, identifier, integer, (, real, true, or false");
     }
 
     void Print()
@@ -616,13 +628,13 @@ class Rat26SParser
                         output_current_token();
                         consume_token();
                     } 
-                    else output_error();
+                    else output_error(";");
                 }  
-                else output_error();
+                else output_error(")");
             }
-            else output_error();
+            else output_error("(");
         }
-        else output_error();
+        else output_error("write");
     }
 
     void Scan()
@@ -650,10 +662,10 @@ class Rat26SParser
                     {
                         output_current_token();
                         consume_token();
-                    } else output_error();
-                } else output_error();
-            } else output_error();
-        } else output_error();
+                    } else output_error(";");
+                } else output_error(")");
+            } else output_error("(");
+        } else output_error("read");
     }
 
     void While()
@@ -679,11 +691,11 @@ class Rat26SParser
 
                     Statement();
                 }
-                else output_error();
+                else output_error(")");
             }
-            else output_error();
+            else output_error("(");
         }
-        else output_error();
+        else output_error("while");
     }
 
     void Condition()
@@ -717,7 +729,7 @@ class Rat26SParser
 
         if (!terminal_found)
         {
-            output_error();
+            output_error("==, !=, >, <, <=, or =>");
         }
     }
 
@@ -829,7 +841,7 @@ class Rat26SParser
                 output_current_token();
                 consume_token();
             }
-            else output_error();
+            else output_error(")");
         }
         else if (get_current_record().token == "real")
         {
@@ -843,7 +855,7 @@ class Rat26SParser
         }
         else
         {
-            output_error();
+            output_error("primary that starts with identifier, integer, (, ), real, true, or false");
         }
     }
 
@@ -856,6 +868,7 @@ class Rat26SParser
         {
             output_current_token();
             consume_token();
+
             IDs();
 
             if (get_current_record().lexeme == ")")
@@ -863,14 +876,15 @@ class Rat26SParser
                 output_current_token();
                 consume_token();
             }
-            else output_error();
+            else output_error(")");
         }
     }
 
-    // bool Empty()
+    // void Empty()
     // {
-
-    //     return false;
+    // 
+    //     write_production("\u03B5\n") // Empty ::= epsilon
+    //     
     // }
 
     void Identifier()
@@ -882,7 +896,7 @@ class Rat26SParser
         }
         else
         {
-            output_error();
+            output_error("identifier");
         }
     }
 
@@ -895,7 +909,7 @@ class Rat26SParser
         }
         else
         {
-            output_error();
+            output_error("integer");
         }
     }
 
@@ -908,7 +922,7 @@ class Rat26SParser
         }
         else
         {
-            output_error();
+            output_error("real");
         }
     }
     

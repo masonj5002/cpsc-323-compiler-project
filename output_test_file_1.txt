@@ -1,14 +1,7 @@
-token               lexeme
----------------------------
-keyword              if
-separator            (
-identifier           valueFound
-operator             !=
-real                 100.346948
-separator            )
-keyword              write
-separator            (
-identifier           valueFound
-separator            )
-separator            ;
-keyword              fi
+<Rat26S> ::= @ <Opt Function Definitions> @ <Opt Declaration List> @ <Statement List> @
+
+Syntax Error in input_test_file_1.txt on line 1 with
+	Token       : keyword
+	Lexeme      : if
+	Expected    : @
+	Violation of: <Rat26S> ::= @ <Opt Function Definitions> @ <Opt Declaration List> @ <Statement List> @

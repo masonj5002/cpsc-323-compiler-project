@@ -64,10 +64,10 @@ int main(int argc, char* argv[])
     std::vector<Record> records = lexical_analyzer(input_file_stream);
     
     // Write everything to the output file
-    for (const Record& record : records)
-    {
-        std::cout << std::setw(20) << std::left << record.token << ' ' << record.lexeme << '\n';
-    }
+    // for (const Record& record : records)
+    // {
+    //     std::cout << std::setw(20) << std::left << record.token << ' ' << record.lexeme << '\n';
+    // }
 
     for (const Record& record : records)
     {
@@ -77,8 +77,8 @@ int main(int argc, char* argv[])
         }
     }
     
-    Rat26SParser parser(records, output_file_stream, true);
-    parser.parse_to_file();
+    Rat26SParser parser(records, INPUT_FILE_NAME, output_file_stream, true);
+    parser.write_productions_to_file();
 
     // Close the file streams
     input_file_stream.close();
