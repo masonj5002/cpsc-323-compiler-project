@@ -1,17 +1,16 @@
 CXX = g++
-CXXFLAGS =  -Wall -Wextra -std=c++23
+CXXFLAGS = -Wall -Wextra -std=c++23
 
-TARGET = lexical_analyzer
-SOURCES = lexical_analyzer.cpp
-OBJECTS = lexical_analyzer.o
+TARGET = main
 
 all: $(TARGET)
 
-$(TARGET): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS)
+$(TARGET): main.cpp fsm.hpp lexical_analyzer.hpp prdp.hpp
+	$(CXX) $(CXXFLAGS) -o $(TARGET) main.cpp
 
-lexical_analyzer.o: lexical_analyzer.cpp fsm.hpp
-	$(CXX) $(CXXFLAGS) -c lexical_analyzer.cpp
+# usage: make run INPUT=input_test_file_2.txt OUTPUT=output.txt
+run: $(TARGET)
+	./$(TARGET) $(INPUT) $(OUTPUT)
 
 clean:
-	rm -f $(TARGET) $(OBJECTS)
+	rm -f $(TARGET)

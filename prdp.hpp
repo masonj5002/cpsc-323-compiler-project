@@ -3,7 +3,7 @@
     CPSC 323
     Assignment 2 : Syntax Analyzer
     Description: 
-
+    
     Members: Mason Jennings, Gabriel Apodaca, Anthony Jimenez
     
     Submission Date: 4/5/2026
@@ -18,6 +18,8 @@
 #include <string>
 #include <fstream>
 #include <iomanip>
+#include <unordered_set>
+#include <stdexcept>
 
 #include "lexical_analyzer.hpp"
 
@@ -48,7 +50,15 @@ class Rat26SParser
        m_input_file_name(input_file_name)
      {}
 
-    const Record& get_current_record() const { return m_records[m_current_token_index]; }
+    // Safely get current record with bounds checking
+    const Record& get_current_record() const 
+    { 
+        if (m_current_token_index >= static_cast<int>(m_records.size()))
+        {
+            throw std::out_of_range("Parser error: Token index out of bounds");
+        }
+        return m_records[m_current_token_index]; 
+    }
 
     void write_productions_to_file()
     {
@@ -57,8 +67,11 @@ class Rat26SParser
 
     void write_production(const std::string& production)
     {
+        if (m_print_productions)
+        {
             m_output_file_stream << production;
             m_current_production = production;
+        }
     }
     
     void output_current_token()
@@ -80,70 +93,73 @@ class Rat26SParser
                              << "\tViolation of: " << m_current_production        << '\n';
     }
 
+    // Helper function to check if current token is in a set
+    bool is_in_first_set(const std::unordered_set<std::string>& first_set) const
+    {
+        return first_set.count(get_current_record().lexeme) || first_set.count(get_current_record().token);
+    }
+
     void Rat26S()
     {
-        if (m_print_productions)
-            write_production("<Rat26S> ::= @ <Opt Function Definitions> @ <Opt Declaration List> @ <Statement List> @\n");
+        write_production("<Rat26S> ::= @ <Opt Function Definitions> @ <Opt Declaration List> @ <Statement List> @\n");
         
-        // This is to prevent two syntax errors being written to the output file because there is 
-        // another check at the bottom of this nonterminal function
-        bool first_check = false;
-
-        if (get_current_record().lexeme == "@")
+        if (get_current_record().lexeme != "@")
         {
-            first_check = true;
-
-            output_current_token();
-            consume_token();
-
-            Opt_Function_Definitions();
-
-            if (get_current_record().lexeme == "@")
-            {
-                output_current_token();
-                consume_token();
-
-                Opt_Declaration_List();
-
-                if (get_current_record().lexeme == "@")
-                {
-                    output_current_token();
-                    consume_token();
-
-                    Statement_List();
-
-                    if (get_current_record().lexeme == "@")
-                    {
-                        output_current_token();
-                        consume_token();
-                    }
-                    else output_error("@");
-                }
-                else output_error("@");
-            }
-            else output_error("@");
+            output_error("@");
+            return;
         }
-        else output_error("@");
 
-        // If the lexeme is not @, then that means we got passed the very first check and were
-        // originally looking through the right hand side of the production for <Rat@26S>. 
-        // If it was @, then that means the very first check of the grammar failed and
-        // there is a syntax error that was already written to the output file.
-        if (first_check && get_current_record().token != "eof")
+        output_current_token();
+        consume_token();
+
+        Opt_Function_Definitions();
+
+        if (get_current_record().lexeme != "@")
         {
-            output_error("eof");
+            output_error("@");
+            return;
+        }
+
+        output_current_token();
+        consume_token();
+
+        Opt_Declaration_List();
+
+        if (get_current_record().lexeme != "@")
+        {
+            output_error("@");
+            return;
+        }
+
+        output_current_token();
+        consume_token();
+
+        Statement_List();
+
+        if (get_current_record().lexeme != "@")
+        {
+            output_error("@");
+            return;
+        }
+
+        output_current_token();
+        consume_token();
+
+        // Check for proper end of file
+        if (get_current_record().token != "eof")
+        {
+            output_error("end of file");
         }
     }
     
     void Opt_Function_Definitions()
     {
-
-        if (m_print_productions)
-            write_production("<Opt Function Definitions> ::= <Function Definitions> | <Empty>\n");
+        write_production("<Opt Function Definitions> ::= <Function Definitions> | <Empty>\n");
 
         if (get_current_record().lexeme == "function")
         {
             output_current_token();
+            consume_token();
             Function_Definitions();
         }
         // epsilon allowed here
@@ -151,8 +167,7 @@ class Rat26SParser
 
     void Function_Definitions()
     {
-        if (m_print_productions)
-            write_production("<Function Definitions> ::= <Function> <Function Definitions Prime>\n");
+        write_production("<Function Definitions> ::= <Function> <Function Definitions Prime>\n");
         
         Function();
         Function_Definitions_Prime();
@@ -160,8 +175,7 @@ class Rat26SParser
 
     void Function_Definitions_Prime()
     {
-        if (m_print_productions)
-            write_production("<Function Definitions Prime> ::= <Function Definitions> | <Empty>\n");
+        write_production("<Function Definitions Prime> ::= <Function Definitions> | <Empty>\n");
         
         if (get_current_record().lexeme == "function")
         {
@@ -172,44 +186,49 @@ class Rat26SParser
 
     void Function()
     {
-        if (m_print_productions)
-            write_production("<Function> ::= function <Identifier> ( <Opt Parameter List> ) <Opt Declaration List> <Body>\n");
+        write_production("<Function> ::= function <Identifier> ( <Opt Parameter List> ) <Opt Declaration List> <Body>\n");
         
-        if (get_current_record().lexeme == "function")
+        if (get_current_record().lexeme != "function")
         {
-            consume_token();
-            
-            if (get_current_record().token == "identifier")
-                output_current_token();
-
-            Identifier();
-            
-            if (get_current_record().lexeme == "(")
-            {
-                output_current_token();
-                consume_token();
-
-                Opt_Parameter_List();
-
-                if (get_current_record().lexeme == ")")
-                {
-                    output_current_token();
-                    consume_token();
-
-                    Opt_Declaration_List();
-                    Body();
-                }
-                else output_error(")");
-            }
-            else output_error("(");
+            output_error("function");
+            return;
         }
-        else output_error("function");
+
+        output_current_token();
+        consume_token();
+        
+        if (get_current_record().token == "identifier")
+            output_current_token();
+
+        Identifier();
+        
+        if (get_current_record().lexeme != "(")
+        {
+            output_error("(");
+            return;
+        }
+
+        output_current_token();
+        consume_token();
+
+        Opt_Parameter_List();
+
+        if (get_current_record().lexeme != ")")
+        {
+            output_error(")");
+            return;
+        }
+
+        output_current_token();
+        consume_token();
+
+        Opt_Declaration_List();
+        Body();
     }
 
     void Opt_Parameter_List()
     {
-        if (m_print_productions)
-            write_production("<Opt Parameter List> ::= <Parameter List> | <Empty>\n");
+        write_production("<Opt Parameter List> ::= <Parameter List> | <Empty>\n");
 
         if (get_current_record().token == "identifier")
         {
@@ -220,8 +239,7 @@ class Rat26SParser
 
     void Parameter_List()
     {
-        if (m_print_productions)
-            write_production("<Parameter List> ::= <Parameter> <Parameter List Prime>\n");
+        write_production("<Parameter List> ::= <Parameter> <Parameter List Prime>\n");
         
         Parameter();
         Parameter_List_Prime();
@@ -229,8 +247,7 @@ class Rat26SParser
 
     void Parameter_List_Prime()
     {
-        if (m_print_productions)
-            write_production("<Parameter List Prime> ::= , <Parameter List> | <Empty>\n");
+        write_production("<Parameter List Prime> ::= , <Parameter List> | <Empty>\n");
 
         if (get_current_record().lexeme == ",")
         {
@@ -243,8 +260,7 @@ class Rat26SParser
 
     void Parameter()
     {
-        if (m_print_productions)
-            write_production("<Parameter> ::= <IDs> <Qualifier>\n");
+        write_production("<Parameter> ::= <IDs> <Qualifier>\n");
 
         IDs();
         Qualifier();
@@ -252,95 +268,91 @@ class Rat26SParser
 
     void Qualifier()
     {
-        if (m_print_productions)
-            write_production("<Qualifier> ::= integer | boolean | real\n");
+        write_production("<Qualifier> ::= integer | boolean | real\n");
         
-        if (get_current_record().lexeme == "integer" || get_current_record().lexeme == "boolean" || get_current_record().lexeme == "real")
+        static const std::unordered_set<std::string> qualifiers = {"integer", "boolean", "real"};
+        
+        if (!qualifiers.count(get_current_record().lexeme))
         {
-            output_current_token();
-            consume_token();
+            output_error("integer, boolean, or real");
+            return;
         }
-        else output_error("integer, boolean, or real");
+
+        output_current_token();
+        consume_token();
     }
 
     void Body()
     {
-        if (m_print_productions)
-            write_production("<Body> ::= { < Statement List> }\n");
+        write_production("<Body> ::= { < Statement List> }\n");
         
-        if (get_current_record().lexeme == "{")
+        if (get_current_record().lexeme != "{")
         {
-            output_current_token();
-            consume_token();
+            output_error("{");
+            return;
+        }
 
-            Statement_List();
+        output_current_token();
+        consume_token();
 
-            if (get_current_record().lexeme == "}")
-            {
-                output_current_token();
-                consume_token();
-            }
-            else output_error("}");
-        } 
-        else output_error("{");
-        
+        Statement_List();
+
+        if (get_current_record().lexeme != "}")
+        {
+            output_error("}");
+            return;
+        }
+
+        output_current_token();
+        consume_token();
     }
 
     void Opt_Declaration_List()
     {
-        if (m_print_productions)
-            write_production("<Opt Declaration List> ::= <Declaration List> | <Empty>\n");
+        write_production("<Opt Declaration List> ::= <Declaration List> | <Empty>\n");
 
-        std::vector<std::string> first_set_of_opt_declaration_list = {"integer", "boolean", "real"}; // technically epsilon as well but we don't count that
+        static const std::unordered_set<std::string> first_set = {"integer", "boolean", "real"};
         
-        for (const auto& terminal : first_set_of_opt_declaration_list)
+        if (is_in_first_set(first_set))
         {
-            if (get_current_record().lexeme == terminal)
-            {
-                Declaration_List();
-            } // epsilon is allowed here, aka nothing happens
+            Declaration_List();
         }
-        
+        // epsilon is allowed here
     }
 
     void Declaration_List()
     {
-        if (m_print_productions)
-            write_production("<Declaration List> ::= <Declaration> ; <Declaration List Prime>\n");
+        write_production("<Declaration List> ::= <Declaration> ; <Declaration List Prime>\n");
             
         Declaration();
 
-        if (get_current_record().lexeme == ";")
-        {
-            output_current_token();
-            consume_token();
-            Declaration_List_Prime();
-        }
-        else
+        if (get_current_record().lexeme != ";")
         {
             output_error(";");
+            return;
         }
+
+        output_current_token();
+        consume_token();
+        Declaration_List_Prime();
     }
 
     void Declaration_List_Prime()
     {
-        if (m_print_productions)
-            write_production("<Declaration List Prime> ::= <Declaration List> | <Empty>\n");
+        write_production("<Declaration List Prime> ::= <Declaration List> | <Empty>\n");
         
-        if (get_current_record().lexeme == "integer" || get_current_record().lexeme == "boolean" || get_current_record().lexeme == "real")
+        static const std::unordered_set<std::string> first_set = {"integer", "boolean", "real"};
+        
+        if (is_in_first_set(first_set))
         {
-            // output_current_token();
-
-            // WE DON'T CONSUME BECAUSE THE NONTERMINAL IS NOT IN THE CURRENT PRODUCTION WE ARE LOOKING AT
-            
             Declaration_List();
         }
+        // epsilon is allowed here
     }
 
     void Declaration()
     {
-        if (m_print_productions)
-            write_production("<Declaration> ::= <Qualifier> <IDs>\n");
+        write_production("<Declaration> ::= <Qualifier> <IDs>\n");
 
         Qualifier();
         IDs();
@@ -348,8 +360,7 @@ class Rat26SParser
 
     void IDs()
     {
-        if (m_print_productions)
-            write_production("<IDs> ::= <Identifier> <IDs Prime>\n");
+        write_production("<IDs> ::= <Identifier> <IDs Prime>\n");
         
         if (get_current_record().token == "identifier")
             output_current_token();
@@ -360,8 +371,7 @@ class Rat26SParser
 
     void IDs_Prime()
     {
-        if (m_print_productions)
-            write_production("<IDs Prime> ::= , <IDs> | <Empty>\n");
+        write_production("<IDs Prime> ::= , <IDs> | <Empty>\n");
 
         if (get_current_record().lexeme == ",")
         {
@@ -374,8 +384,7 @@ class Rat26SParser
 
     void Statement_List()
     {
-        if (m_print_productions)
-            write_production("<Statement List> ::= <Statement> <Statement List Prime>\n");
+        write_production("<Statement List> ::= <Statement> <Statement List Prime>\n");
         
         Statement();
         Statement_List_Prime();
@@ -383,150 +392,150 @@ class Rat26SParser
 
     void Statement_List_Prime()
     {
-        if (m_print_productions)
-            write_production("<Statement List Prime> ::= <Statement List> | <Empty>\n");
+        write_production("<Statement List Prime> ::= <Statement List> | <Empty>\n");
 
-        std::vector<std::string> first_set_of_statement_list_prime = {"{", "identifier", "if", "return", "write", "read", "while"};
+        static const std::unordered_set<std::string> first_set = {"{", "identifier", "if", "return", "write", "read", "while"};
 
-        for (const auto& terminal : first_set_of_statement_list_prime)
+        if (is_in_first_set(first_set))
         {
-            if (get_current_record().lexeme == terminal || get_current_record().token == "identifier")
-            {
-                Statement_List();
-                break;
-            }
+            Statement_List();
         }
         // epsilon is okay here
     }
 
     void Statement()
     {
-        // if (m_print_productions)
-        //      write_production("<Statement> ::= <Compound> | <Assign> | <If> | <Return> | <Print> | <Scan> | <While>\n");
-
+        // Determine which type of statement based on first token
         if (get_current_record().lexeme == "{")
         {
             output_current_token();
-            if (m_print_productions) write_production("<Statement> ::= <Compound>\n");
+            write_production("<Statement> ::= <Compound>\n");
             Compound();
         }
         else if (get_current_record().token == "identifier")
         {
             output_current_token();
-            if (m_print_productions) write_production("<Statement> ::= <Assign>\n");
+            write_production("<Statement> ::= <Assign>\n");
             Assign();
         }
         else if (get_current_record().lexeme == "if")
         {
             output_current_token();
-            if (m_print_productions) write_production("<Statement> ::= <If>\n");
+            write_production("<Statement> ::= <If>\n");
             If();
         }
         else if (get_current_record().lexeme == "return")
         {
             output_current_token();
-            if (m_print_productions) write_production("<Statement> ::= <Return>\n");
+            write_production("<Statement> ::= <Return>\n");
             Return();
         }
         else if (get_current_record().lexeme == "write")
         {
             output_current_token();
-            if (m_print_productions) write_production("<Statement> ::= <Print>\n");
+            write_production("<Statement> ::= <Print>\n");
             Print();
         }
         else if (get_current_record().lexeme == "read")
         {
             output_current_token();
-            if (m_print_productions) write_production("<Statement> ::= <Scan>\n");
+            write_production("<Statement> ::= <Scan>\n");
             Scan();
         }
         else if (get_current_record().lexeme == "while")
         {
             output_current_token();
-            if (m_print_productions) write_production("<Statement> ::= <While>\n");
+            write_production("<Statement> ::= <While>\n");
             While();
         }
         else
         {
             output_error("statement that begins with {, an identifier, if, return, write, read, or while");
         }
-
     }
 
     void Compound()
     {
-        if (m_print_productions)
-            write_production("<Compound> ::= { <Statement List> }\n");
+        write_production("<Compound> ::= { <Statement List> }\n");
 
-        if (get_current_record().lexeme == "{")
+        if (get_current_record().lexeme != "{")
         {
-            output_current_token();
-            consume_token();
-
-            Statement_List();
-
-            if (get_current_record().lexeme == "}")
-            {
-                output_current_token();
-                consume_token();
-            }
-            else output_error("}");
+            output_error("{");
+            return;
         }
-        else output_error("{");
+
+        output_current_token();
+        consume_token();
+
+        Statement_List();
+
+        if (get_current_record().lexeme != "}")
+        {
+            output_error("}");
+            return;
+        }
+
+        output_current_token();
+        consume_token();
     }
 
     void Assign()
     {
-        if (m_print_productions)
-            write_production("<Assign> ::= <Identifier> = <Expression>;\n");
+        write_production("<Assign> ::= <Identifier> = <Expression>;\n");
 
         Identifier();
 
-        if (get_current_record().lexeme == "=")
+        if (get_current_record().lexeme != "=")
         {
-            output_current_token();
-            consume_token();
-            
-            Expression();
+            output_error("=");
+            return;
         }
-        else output_error("=");
+
+        output_current_token();
+        consume_token();
+        
+        Expression();
     }
 
     void If()
     {
-        if (m_print_productions)
-            write_production("<If> ::= if ( <Condition> ) <Statement> <If Prime>\n");
+        write_production("<If> ::= if ( <Condition> ) <Statement> <If Prime>\n");
         
-        if (get_current_record().lexeme == "if")
+        if (get_current_record().lexeme != "if")
         {
-            consume_token();
-
-            if (get_current_record().lexeme == "(")
-            {
-                output_current_token();
-                consume_token();
-
-                Condition();
-
-                if (get_current_record().lexeme == ")")
-                {
-                    output_current_token();
-                    consume_token();
-
-                    Statement();
-                    If_Prime();
-                }
-                else output_error(")");
-            }
-            else output_error("(");
+            output_error("if");
+            return;
         }
-        else output_error("if");
+
+        consume_token();
+
+        if (get_current_record().lexeme != "(")
+        {
+            output_error("(");
+            return;
+        }
+
+        output_current_token();
+        consume_token();
+
+        Condition();
+
+        if (get_current_record().lexeme != ")")
+        {
+            output_error(")");
+            return;
+        }
+
+        output_current_token();
+        consume_token();
+
+        Statement();
+        If_Prime();
     }
 
     void If_Prime()
     {
-        if (m_print_productions)
-            write_production("<If Prime> ::= fi | otherwise <Statement> fi\n");
+        write_production("<If Prime> ::= fi | otherwise <Statement> fi\n");
         
         if (get_current_record().lexeme == "fi")
         {
@@ -540,168 +549,188 @@ class Rat26SParser
 
             Statement();
 
-            if (get_current_record().lexeme == "fi")
+            if (get_current_record().lexeme != "fi")
             {
-                output_current_token();
-                consume_token();
+                output_error("fi");
+                return;
             }
-            else output_error("fi");
+
+            output_current_token();
+            consume_token();
         }
-        else output_error("fi or otherwise");
+        else
+        {
+            output_error("fi or otherwise");
+        }
     }
 
     void Return()
     {
-        if (m_print_productions)
-            write_production("<Return> ::= return <Return Prime>\n");
+        write_production("<Return> ::= return <Return Prime>\n");
 
-        if (get_current_record().lexeme == "return")
+        if (get_current_record().lexeme != "return")
         {
-            consume_token();
-
-            Return_Prime();
+            output_error("return");
+            return;
         }
-        else output_error("return");
+
+        consume_token();
+        Return_Prime();
     }
 
     void Return_Prime()
     {
-        if (m_print_productions)
-            write_production("<Return Prime> ::= ; | <Expression>\n");
+        write_production("<Return Prime> ::= ; | <Expression>\n");
 
-
-        std::vector<std::string> first_set_of_expression = {"-", "identifier", "integer", "(", "real", "true", "false"};
-
-        bool token_is_in_first_set = false;
-        for (const auto& terminal : first_set_of_expression)
-        {
-            if (get_current_record().lexeme == terminal || get_current_record().token == terminal)
-            {
-                token_is_in_first_set = true;
-                break;
-            }
-        }
+        static const std::unordered_set<std::string> first_set_of_expression = {"-", "identifier", "integer", "(", "real", "true", "false"};
 
         if (get_current_record().lexeme == ";")
         {
             output_current_token();
             consume_token();
         }
-        else if (token_is_in_first_set)
+        else if (is_in_first_set(first_set_of_expression))
         {
-            // output_current_token();
             Expression();
 
-            if (get_current_record().lexeme == ";")
+            if (get_current_record().lexeme != ";")
             {
-                output_current_token();
-                consume_token();
+                output_error(";");
+                return;
             }
-            else output_error(";");
+
+            output_current_token();
+            consume_token();
         }
-        else output_error("expression that starts with -, identifier, integer, (, real, true, or false");
+        else
+        {
+            output_error("; or expression that starts with -, identifier, integer, (, real, true, or false");
+        }
     }
 
     void Print()
     {
-        if (m_print_productions)
-            write_production("<Print> ::= write ( <Expression> );\n");
+        write_production("<Print> ::= write ( <Expression> );\n");
         
-        if (get_current_record().lexeme == "write")
+        if (get_current_record().lexeme != "write")
         {
-            consume_token();
-
-            if (get_current_record().lexeme == "(")
-            {
-                output_current_token();
-                consume_token();
-
-                Expression();
-
-                if (get_current_record().lexeme == ")")
-                {
-                    output_current_token();
-                    consume_token();
-
-                    if (get_current_record().lexeme == ";")
-                    {
-                        output_current_token();
-                        consume_token();
-                    } 
-                    else output_error(";");
-                }  
-                else output_error(")");
-            }
-            else output_error("(");
+            output_error("write");
+            return;
         }
-        else output_error("write");
+
+        consume_token();
+
+        if (get_current_record().lexeme != "(")
+        {
+            output_error("(");
+            return;
+        }
+
+        output_current_token();
+        consume_token();
+
+        Expression();
+
+        if (get_current_record().lexeme != ")")
+        {
+            output_error(")");
+            return;
+        }
+
+        output_current_token();
+        consume_token();
+
+        if (get_current_record().lexeme != ";")
+        {
+            output_error(";");
+            return;
+        }
+
+        output_current_token();
+        consume_token();
     }
 
     void Scan()
     {
-        if (m_print_productions)
-            write_production("<Scan> ::= read ( <IDs> );\n");
+        write_production("<Scan> ::= read ( <IDs> );\n");
         
-        if (get_current_record().lexeme == "read")
+        if (get_current_record().lexeme != "read")
         {
-            consume_token();
+            output_error("read");
+            return;
+        }
 
-            if (get_current_record().lexeme == "(")
-            {
-                output_current_token();
-                consume_token();
+        consume_token();
 
-                IDs();
+        if (get_current_record().lexeme != "(")
+        {
+            output_error("(");
+            return;
+        }
 
-                if (get_current_record().lexeme == ")")
-                {
-                    output_current_token();
-                    consume_token();
+        output_current_token();
+        consume_token();
 
-                    if (get_current_record().lexeme == ";")
-                    {
-                        output_current_token();
-                        consume_token();
-                    } else output_error(";");
-                } else output_error(")");
-            } else output_error("(");
-        } else output_error("read");
+        IDs();
+
+        if (get_current_record().lexeme != ")")
+        {
+            output_error(")");
+            return;
+        }
+
+        output_current_token();
+        consume_token();
+
+        if (get_current_record().lexeme != ";")
+        {
+            output_error(";");
+            return;
+        }
+
+        output_current_token();
+        consume_token();
     }
 
     void While()
     {
-        if (m_print_productions)
-            write_production("<While> ::= while ( <Condition> ) <Statement>\n");
+        write_production("<While> ::= while ( <Condition> ) <Statement>\n");
         
-        if (get_current_record().lexeme == "while")
+        if (get_current_record().lexeme != "while")
         {
-            output_current_token();
-            consume_token();
-
-            if (get_current_record().lexeme == "(")
-            {
-                output_current_token();
-                consume_token();
-                Condition();
-
-                if (get_current_record().lexeme == ")")
-                {
-                    output_current_token();
-                    consume_token();
-
-                    Statement();
-                }
-                else output_error(")");
-            }
-            else output_error("(");
+            output_error("while");
+            return;
         }
-        else output_error("while");
+
+        output_current_token();
+        consume_token();
+
+        if (get_current_record().lexeme != "(")
+        {
+            output_error("(");
+            return;
+        }
+
+        output_current_token();
+        consume_token();
+        
+        Condition();
+
+        if (get_current_record().lexeme != ")")
+        {
+            output_error(")");
+            return;
+        }
+
+        output_current_token();
+        consume_token();
+
+        Statement();
     }
 
     void Condition()
     {
-        if (m_print_productions)
-            write_production("<Condition> ::= <Expression> <Relop> <Expression>\n");
+        write_production("<Condition> ::= <Expression> <Relop> <Expression>\n");
         
         Expression();
         Relop();
@@ -710,33 +739,23 @@ class Rat26SParser
 
     void Relop()
     {
-        if (m_print_productions)
-            write_production("<Relop> ::= == | != | > | < | <= | =>\n");
+        write_production("<Relop> ::= == | != | > | < | <= | =>\n");
 
-        std::vector<std::string> terminals = {"==", "!=", ">", "<", "<=", "=>"};
+        static const std::unordered_set<std::string> operators = {"==", "!=", ">", "<", "<=", "=>"};
         
-        bool terminal_found = false;
-        for (const auto& terminal : terminals)
-        {
-            if (get_current_record().lexeme == terminal)
-            {
-                output_current_token();
-                consume_token();
-                terminal_found = true;
-                break;
-            }
-        }
-
-        if (!terminal_found)
+        if (!operators.count(get_current_record().lexeme))
         {
             output_error("==, !=, >, <, <=, or =>");
+            return;
         }
+
+        output_current_token();
+        consume_token();
     }
 
     void Expression()
     {
-        if (m_print_productions)
-            write_production("<Expression> ::= <Term> <Expression Prime>\n");
+        write_production("<Expression> ::= <Term> <Expression Prime>\n");
 
         Term();
         Expression_Prime();
@@ -744,8 +763,7 @@ class Rat26SParser
 
     void Expression_Prime()
     {
-        if (m_print_productions)
-            write_production("<Expression Prime> ::= + <Term> <Expression Prime> | - <Term> <Expression Prime> | <Empty>\n");
+        write_production("<Expression Prime> ::= + <Term> <Expression Prime> | - <Term> <Expression Prime> | <Empty>\n");
         
         if (get_current_record().lexeme == "+")
         {
@@ -761,12 +779,12 @@ class Rat26SParser
             Term();
             Expression_Prime();
         }
+        // else epsilon
     }
 
     void Term()
     {
-        if (m_print_productions)
-            write_production("<Term> ::= <Factor> <Term Prime>\n");
+        write_production("<Term> ::= <Factor> <Term Prime>\n");
         
         Factor();
         Term_Prime();
@@ -774,8 +792,7 @@ class Rat26SParser
 
     void Term_Prime()
     {
-        if (m_print_productions)
-            write_production("<Term Prime> ::= * <Factor> <Term Prime> | / <Factor> <Term Prime> | <Empty>\n");
+        write_production("<Term Prime> ::= * <Factor> <Term Prime> | / <Factor> <Term Prime> | <Empty>\n");
         
         if (get_current_record().lexeme == "*")
         {
@@ -791,13 +808,12 @@ class Rat26SParser
             Factor();
             Term_Prime();
         }
-        // else <Empty>
+        // else epsilon
     }
 
     void Factor()
     {
-        if (m_print_productions)
-            write_production("<Factor> ::= - <Primary> | <Primary>\n");
+        write_production("<Factor> ::= - <Primary> | <Primary>\n");
         
         if (get_current_record().lexeme == "-")
         {
@@ -809,17 +825,14 @@ class Rat26SParser
         {
             Primary();
         }
-
     }
 
     void Primary()
     {
-        if (m_print_productions)
-            write_production("<Primary> ::= <Identifier> <Primary Prime> | <Integer> | ( <Expression> ) | <Real> | true | false\n");
+        write_production("<Primary> ::= <Identifier> <Primary Prime> | <Integer> | ( <Expression> ) | <Real> | true | false\n");
         
         if (get_current_record().token == "identifier")
         {
-            //maybe you print here, and the consumption is done later
             output_current_token();
             Identifier();
             Primary_Prime();
@@ -836,12 +849,14 @@ class Rat26SParser
 
             Expression();
 
-            if (get_current_record().lexeme == ")")
+            if (get_current_record().lexeme != ")")
             {
-                output_current_token();
-                consume_token();
+                output_error(")");
+                return;
             }
-            else output_error(")");
+
+            output_current_token();
+            consume_token();
         }
         else if (get_current_record().token == "real")
         {
@@ -855,14 +870,13 @@ class Rat26SParser
         }
         else
         {
-            output_error("primary that starts with identifier, integer, (, ), real, true, or false");
+            output_error("primary that starts with identifier, integer, (, real, true, or false");
         }
     }
 
     void Primary_Prime()
     {
-        if (m_print_productions)
-            write_production("<Primary Prime> ::= ( IDs ) | <Empty>\n");
+        write_production("<Primary Prime> ::= ( IDs ) | <Empty>\n");
 
         if (get_current_record().lexeme == "(")
         {
@@ -871,59 +885,48 @@ class Rat26SParser
 
             IDs();
 
-            if (get_current_record().lexeme == ")")
+            if (get_current_record().lexeme != ")")
             {
-                output_current_token();
-                consume_token();
+                output_error(")");
+                return;
             }
-            else output_error(")");
-        }
-    }
 
-    // void Empty()
-    // {
-    // 
-    //     write_production("\u03B5\n") // Empty ::= epsilon
-    //     
-    // }
+            output_current_token();
+            consume_token();
+        }
+        // else epsilon
+    }
 
     void Identifier()
     {
-
-        if (get_current_record().token == "identifier")
-        {
-            consume_token();
-        }
-        else
+        if (get_current_record().token != "identifier")
         {
             output_error("identifier");
+            return;
         }
+
+        consume_token();
     }
 
     void Integer()
     {
-
-        if (get_current_record().token == "integer")
-        {
-            consume_token();
-        }
-        else
+        if (get_current_record().token != "integer")
         {
             output_error("integer");
+            return;
         }
+
+        consume_token();
     }
 
     void Real()
     {
-
-        if (get_current_record().token == "real")
-        {
-            consume_token();
-        }
-        else
+        if (get_current_record().token != "real")
         {
             output_error("real");
+            return;
         }
+
+        consume_token();
     }
-    
 };
