@@ -70,8 +70,8 @@ class Rat26SParser
         if (m_print_productions)
         {
             m_output_file_stream << production;
-            m_current_production = production;
         }
+        m_current_production = production;
     }
     
     void output_current_token()
@@ -159,7 +159,7 @@ class Rat26SParser
         if (get_current_record().lexeme == "function")
         {
             output_current_token();
-            consume_token();
+
             Function_Definitions();
         }
         // epsilon allowed here
@@ -179,6 +179,7 @@ class Rat26SParser
         
         if (get_current_record().lexeme == "function")
         {
+            output_current_token();
             Function_Definitions();
         }
         // epsilon is allowed here
@@ -194,7 +195,7 @@ class Rat26SParser
             return;
         }
 
-        output_current_token();
+        // output_current_token();
         consume_token();
         
         if (get_current_record().token == "identifier")
