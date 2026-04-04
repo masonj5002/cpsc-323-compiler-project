@@ -13,6 +13,10 @@
 
 */
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include <vector>
 #include <string>
 #include <utility>
@@ -30,6 +34,12 @@ using namespace syntax_analysis;
 
 int main(int argc, char* argv[])
 {
+
+    // Switches Window Command Prompt to UTF-8 in order to display epsilon correctly.
+    // This is only for Windows and should not be an issue for Linux.
+    #ifdef _WIN32
+        SetConsoleOutputCP(CP_UTF8);
+    #endif
 
     // Collect command line arguments
     std::vector<std::string> arguments{argv, argv + argc};

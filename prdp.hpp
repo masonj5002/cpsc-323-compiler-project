@@ -154,10 +154,10 @@ class Rat26SParser
     
     void Opt_Function_Definitions()
     {
-        write_production("<Opt Function Definitions> -> <Function Definitions> | <Empty>\n");
-
         if (get_current_record().lexeme == "function")
         {
+            write_production("<Opt Function Definitions> -> <Function Definitions>\n");
+
             output_current_token();
 
             Function_Definitions();
@@ -175,11 +175,12 @@ class Rat26SParser
 
     void Function_Definitions_Prime()
     {
-        write_production("<Function Definitions Prime> -> <Function Definitions> | <Empty>\n");
-        
         if (get_current_record().lexeme == "function")
         {
+            write_production("<Function Definitions Prime> -> <Function Definitions>\n");
+         
             output_current_token();
+         
             Function_Definitions();
         }
         else Empty("<Function Definitions Prime>");
@@ -228,10 +229,10 @@ class Rat26SParser
 
     void Opt_Parameter_List()
     {
-        write_production("<Opt Parameter List> -> <Parameter List> | <Empty>\n");
-
         if (get_current_record().token == "identifier")
         {
+            write_production("<Opt Parameter List> -> <Parameter List>\n");
+
             Parameter_List();
         }
         else Empty("<Opt Parameter List>");
@@ -247,12 +248,13 @@ class Rat26SParser
 
     void Parameter_List_Prime()
     {
-        write_production("<Parameter List Prime> -> , <Parameter List> | <Empty>\n");
-
         if (get_current_record().lexeme == ",")
         {
+            write_production("<Parameter List Prime> -> , <Parameter List>\n");
+
             output_current_token();
             consume_token();
+
             Parameter_List();
         }
         else Empty("<Parameter List Prime>");
@@ -268,8 +270,6 @@ class Rat26SParser
 
     void Qualifier()
     {
-        write_production("<Qualifier> -> integer | boolean | real\n");
-        
         static const std::unordered_set<std::string> qualifiers = {"integer", "boolean", "real"};
         
         if (!qualifiers.count(get_current_record().lexeme))
@@ -277,6 +277,8 @@ class Rat26SParser
             output_error("integer, boolean, or real");
             return;
         }
+
+        write_production("<Qualifier> -> " + get_current_record().lexeme + '\n');
 
         output_current_token();
         consume_token();
@@ -309,12 +311,12 @@ class Rat26SParser
 
     void Opt_Declaration_List()
     {
-        write_production("<Opt Declaration List> -> <Declaration List> | <Empty>\n");
-
         static const std::unordered_set<std::string> first_set = {"integer", "boolean", "real"};
         
         if (is_in_first_set(first_set))
         {
+            write_production("<Opt Declaration List> -> <Declaration List>\n");
+            
             Declaration_List();
         }
         else Empty("<Opt Declaration List>");
@@ -334,17 +336,18 @@ class Rat26SParser
 
         output_current_token();
         consume_token();
+
         Declaration_List_Prime();
     }
 
     void Declaration_List_Prime()
     {
-        write_production("<Declaration List Prime> -> <Declaration List> | <Empty>\n");
-        
         static const std::unordered_set<std::string> first_set = {"integer", "boolean", "real"};
         
         if (is_in_first_set(first_set))
         {
+            write_production("<Declaration List Prime> -> <Declaration List>\n");
+
             Declaration_List();
         }
         else Empty("<Declaration List Prime>");
@@ -371,12 +374,13 @@ class Rat26SParser
 
     void IDs_Prime()
     {
-        write_production("<IDs Prime> -> , <IDs> | <Empty>\n");
-
         if (get_current_record().lexeme == ",")
         {
+            write_production("<IDs Prime> -> , <IDs>\n");
+
             output_current_token();
             consume_token();
+            
             IDs();
         }
         else Empty("<IDs Prime>");
@@ -392,12 +396,12 @@ class Rat26SParser
 
     void Statement_List_Prime()
     {
-        write_production("<Statement List Prime> -> <Statement List> | <Empty>\n");
-
         static const std::unordered_set<std::string> first_set = {"{", "identifier", "if", "return", "write", "read", "while"};
 
         if (is_in_first_set(first_set))
         {
+            write_production("<Statement List Prime> -> <Statement List>\n");
+
             Statement_List();
         }
         else Empty("<Statement List Prime>");
@@ -535,15 +539,17 @@ class Rat26SParser
 
     void If_Prime()
     {
-        write_production("<If Prime> -> fi | otherwise <Statement> fi\n");
-        
         if (get_current_record().lexeme == "fi")
         {
+            write_production("<If Prime> -> fi\n");
+
             output_current_token();
             consume_token();
         }
         else if (get_current_record().lexeme == "otherwise")
         {
+            write_production("<If Prime> -> otherwise <Statement> fi\n");
+
             output_current_token();
             consume_token();
 
@@ -580,17 +586,19 @@ class Rat26SParser
 
     void Return_Prime()
     {
-        write_production("<Return Prime> -> ; | <Expression>\n");
-
         static const std::unordered_set<std::string> first_set_of_expression = {"-", "identifier", "integer", "(", "real", "true", "false"};
 
         if (get_current_record().lexeme == ";")
         {
+            write_production("<Return Prime> -> ;\n");
+            
             output_current_token();
             consume_token();
         }
         else if (is_in_first_set(first_set_of_expression))
         {
+            write_production("<Return Prime> -> <Expression>\n");
+
             Expression();
 
             if (get_current_record().lexeme != ";")
@@ -739,8 +747,6 @@ class Rat26SParser
 
     void Relop()
     {
-        write_production("<Relop> -> == | != | > | < | <= | =>\n");
-
         static const std::unordered_set<std::string> operators = {"==", "!=", ">", "<", "<=", "=>"};
         
         if (!operators.count(get_current_record().lexeme))
@@ -748,6 +754,8 @@ class Rat26SParser
             output_error("==, !=, >, <, <=, or =>");
             return;
         }
+
+        write_production("<Relop> -> " + get_current_record().lexeme + '\n');
 
         output_current_token();
         consume_token();
@@ -763,19 +771,23 @@ class Rat26SParser
 
     void Expression_Prime()
     {
-        write_production("<Expression Prime> -> + <Term> <Expression Prime> | - <Term> <Expression Prime> | <Empty>\n");
-        
         if (get_current_record().lexeme == "+")
         {
+            write_production("<Expression Prime> -> + <Term> <Expression Prime>\n");
+            
             output_current_token();
             consume_token();
+
             Term();
             Expression_Prime();
         }
         else if (get_current_record().lexeme == "-")
         {
+            write_production("<Expression Prime> -> - <Term> <Expression Prime>\n");
+
             output_current_token();
             consume_token();
+
             Term();
             Expression_Prime();
         }
@@ -792,19 +804,22 @@ class Rat26SParser
 
     void Term_Prime()
     {
-        write_production("<Term Prime> -> * <Factor> <Term Prime> | / <Factor> <Term Prime> | <Empty>\n");
-        
         if (get_current_record().lexeme == "*")
         {
+            write_production("<Term Prime> -> * <Factor> <Term Prime>\n");
+
             output_current_token();
             consume_token();
+            
             Factor();
             Term_Prime();
         }
         else if (get_current_record().lexeme == "/")
         {
+            write_production("<Term Prime> -> / <Factor> <Term Prime>\n");
             output_current_token();
             consume_token();
+            
             Factor();
             Term_Prime();
         }
@@ -813,28 +828,30 @@ class Rat26SParser
 
     void Factor()
     {
-        write_production("<Factor> -> - <Primary> | <Primary>\n");
-        
         if (get_current_record().lexeme == "-")
         {
+            write_production("<Factor> -> - <Primary>\n");
+
             output_current_token();
             consume_token();
             Primary();
         }
         else
         {
+            write_production("<Factor> -> <Primary>\n");
+
             Primary();
         }
     }
 
     void Primary()
     {
-        write_production("<Primary> -> <Identifier> <Primary Prime> | <Integer> | ( <Expression> ) | <Real> | true | false\n");
-        
         if (get_current_record().token == "identifier")
         {
-            write_production("<Primary> -> <Identifier> <Primary Prime>");
+            write_production("<Primary> -> <Identifier> <Primary Prime>\n");
+            
             output_current_token();
+            
             Identifier();
             Primary_Prime();
         }
@@ -888,10 +905,10 @@ class Rat26SParser
 
     void Primary_Prime()
     {
-        write_production("<Primary Prime> -> ( IDs ) | <Empty>\n");
-
         if (get_current_record().lexeme == "(")
         {
+            write_production("<Primary Prime> -> ( <IDs> )\n");
+            
             output_current_token();
             consume_token();
 
