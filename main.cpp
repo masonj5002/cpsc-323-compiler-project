@@ -1,14 +1,14 @@
 /*
     
     CPSC 323
-    Assignment 1 : Lexical Analyzer
-    Description: A lexer that divides up source code, written in Rat26S, into meaningful units and writes
-                 these generated tokens into a desired output text file.
-
+    Assignment 2 : Syntax Analyzer
+    Description: A syntax analyzer that checks the grammar for a given Rat26S source file using
+    a Predictive Recursive Descent Parser (PRDP).
+    
     Members: Mason Jennings, Gabriel Apodaca, Anthony Jimenez
     
-    Submission Date: 3/1/2026
-    Due Date: 3/1/2026
+    Submission Date: 4/5/2026
+    Due Date: 4/5/2026
     Chosen Language: C++
 
 */

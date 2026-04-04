@@ -1,0 +1,1 @@
+if (valueFound != 100.346948) write(valueFound); fi /* Checks if value was found. */ 

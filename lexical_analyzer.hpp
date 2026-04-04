@@ -1,3 +1,18 @@
+/*
+    
+    CPSC 323
+    Assignment 2 : Syntax Analyzer
+    Description: A syntax analyzer that checks the grammar for a given Rat26S source file using
+    a Predictive Recursive Descent Parser (PRDP).
+    
+    Members: Mason Jennings, Gabriel Apodaca, Anthony Jimenez
+    
+    Submission Date: 4/5/2026
+    Due Date: 4/5/2026
+    Chosen Language: C++
+
+*/
+
 #pragma once
 
 #include <string>
