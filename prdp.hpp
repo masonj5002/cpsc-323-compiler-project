@@ -80,7 +80,7 @@ class Rat26SParser
         m_output_file_stream << "\nToken: " << std::setw(20) << std::left << get_current_record().token << "Lexeme: " << get_current_record().lexeme << '\n';
     }
 
-    void consume_token()
+    void lexer()
     {
         ++m_current_token_index;
     }
@@ -111,7 +111,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
 
         Opt_Function_Definitions();
 
@@ -122,7 +122,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
 
         Opt_Declaration_List();
 
@@ -133,7 +133,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
 
         Statement_List();
 
@@ -144,7 +144,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
 
         // Check for proper end of file
         if (get_current_record().token != "eof")
@@ -197,7 +197,7 @@ class Rat26SParser
             return;
         }
 
-        consume_token();
+        lexer();
         
         if (get_current_record().token == "identifier")
             output_current_token();
@@ -211,7 +211,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
 
         Opt_Parameter_List();
 
@@ -222,7 +222,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
 
         Opt_Declaration_List();
         Body();
@@ -254,7 +254,7 @@ class Rat26SParser
             write_production("<Parameter List Prime> -> , <Parameter List>\n");
 
             output_current_token();
-            consume_token();
+            lexer();
 
             Parameter_List();
         }
@@ -282,7 +282,7 @@ class Rat26SParser
         write_production("<Qualifier> -> " + get_current_record().lexeme + '\n');
 
         output_current_token();
-        consume_token();
+        lexer();
     }
 
     void Body()
@@ -296,7 +296,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
 
         Statement_List();
 
@@ -307,7 +307,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
     }
 
     void Opt_Declaration_List()
@@ -336,7 +336,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
 
         Declaration_List_Prime();
     }
@@ -380,7 +380,7 @@ class Rat26SParser
             write_production("<IDs Prime> -> , <IDs>\n");
 
             output_current_token();
-            consume_token();
+            lexer();
             
             IDs();
         }
@@ -470,7 +470,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
 
         Statement_List();
 
@@ -481,7 +481,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
     }
 
     void Assign()
@@ -497,7 +497,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
         
         Expression();
     }
@@ -512,7 +512,7 @@ class Rat26SParser
             return;
         }
 
-        consume_token();
+        lexer();
 
         if (get_current_record().lexeme != "(")
         {
@@ -521,7 +521,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
 
         Condition();
 
@@ -532,7 +532,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
 
         Statement();
         If_Prime();
@@ -545,14 +545,14 @@ class Rat26SParser
             write_production("<If Prime> -> fi\n");
 
             output_current_token();
-            consume_token();
+            lexer();
         }
         else if (get_current_record().lexeme == "otherwise")
         {
             write_production("<If Prime> -> otherwise <Statement> fi\n");
 
             output_current_token();
-            consume_token();
+            lexer();
 
             Statement();
 
@@ -563,7 +563,7 @@ class Rat26SParser
             }
 
             output_current_token();
-            consume_token();
+            lexer();
         }
         else
         {
@@ -581,7 +581,7 @@ class Rat26SParser
             return;
         }
 
-        consume_token();
+        lexer();
         Return_Prime();
     }
 
@@ -594,7 +594,7 @@ class Rat26SParser
             write_production("<Return Prime> -> ;\n");
             
             output_current_token();
-            consume_token();
+            lexer();
         }
         else if (is_in_first_set(first_set_of_expression))
         {
@@ -609,7 +609,7 @@ class Rat26SParser
             }
 
             output_current_token();
-            consume_token();
+            lexer();
         }
         else
         {
@@ -627,7 +627,7 @@ class Rat26SParser
             return;
         }
 
-        consume_token();
+        lexer();
 
         if (get_current_record().lexeme != "(")
         {
@@ -636,7 +636,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
 
         Expression();
 
@@ -647,7 +647,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
 
         if (get_current_record().lexeme != ";")
         {
@@ -656,7 +656,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
     }
 
     void Scan()
@@ -669,7 +669,7 @@ class Rat26SParser
             return;
         }
 
-        consume_token();
+        lexer();
 
         if (get_current_record().lexeme != "(")
         {
@@ -678,7 +678,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
 
         IDs();
 
@@ -689,7 +689,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
 
         if (get_current_record().lexeme != ";")
         {
@@ -698,7 +698,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
     }
 
     void While()
@@ -712,7 +712,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
 
         if (get_current_record().lexeme != "(")
         {
@@ -721,7 +721,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
         
         Condition();
 
@@ -732,7 +732,7 @@ class Rat26SParser
         }
 
         output_current_token();
-        consume_token();
+        lexer();
 
         Statement();
     }
@@ -759,7 +759,7 @@ class Rat26SParser
         write_production("<Relop> -> " + get_current_record().lexeme + '\n');
 
         output_current_token();
-        consume_token();
+        lexer();
     }
 
     void Expression()
@@ -777,7 +777,7 @@ class Rat26SParser
             write_production("<Expression Prime> -> + <Term> <Expression Prime>\n");
             
             output_current_token();
-            consume_token();
+            lexer();
 
             Term();
             Expression_Prime();
@@ -787,7 +787,7 @@ class Rat26SParser
             write_production("<Expression Prime> -> - <Term> <Expression Prime>\n");
 
             output_current_token();
-            consume_token();
+            lexer();
 
             Term();
             Expression_Prime();
@@ -810,7 +810,7 @@ class Rat26SParser
             write_production("<Term Prime> -> * <Factor> <Term Prime>\n");
 
             output_current_token();
-            consume_token();
+            lexer();
             
             Factor();
             Term_Prime();
@@ -819,7 +819,7 @@ class Rat26SParser
         {
             write_production("<Term Prime> -> / <Factor> <Term Prime>\n");
             output_current_token();
-            consume_token();
+            lexer();
             
             Factor();
             Term_Prime();
@@ -834,7 +834,7 @@ class Rat26SParser
             write_production("<Factor> -> - <Primary>\n");
 
             output_current_token();
-            consume_token();
+            lexer();
             Primary();
         }
         else
@@ -867,7 +867,7 @@ class Rat26SParser
             write_production("<Primary> -> ( <Expression> )\n");
 
             output_current_token();
-            consume_token();
+            lexer();
 
             Expression();
 
@@ -878,7 +878,7 @@ class Rat26SParser
             }
 
             output_current_token();
-            consume_token();
+            lexer();
         }
         else if (get_current_record().token == "real")
         {
@@ -890,13 +890,13 @@ class Rat26SParser
         {
             write_production("<Primary> -> true\n");
             output_current_token();
-            consume_token();
+            lexer();
         }
         else if (get_current_record().lexeme == "false")
         {
             write_production("<Primary> -> false\n");
             output_current_token();
-            consume_token();
+            lexer();
         }
         else
         {
@@ -911,7 +911,7 @@ class Rat26SParser
             write_production("<Primary Prime> -> ( <IDs> )\n");
             
             output_current_token();
-            consume_token();
+            lexer();
 
             IDs();
 
@@ -922,7 +922,7 @@ class Rat26SParser
             }
 
             output_current_token();
-            consume_token();
+            lexer();
         }
         else Empty("<Primary Prime>");
     }
@@ -935,7 +935,7 @@ class Rat26SParser
             return;
         }
 
-        consume_token();
+        lexer();
     }
 
     void Integer()
@@ -946,7 +946,7 @@ class Rat26SParser
             return;
         }
 
-        consume_token();
+        lexer();
     }
 
     void Real()
@@ -957,7 +957,7 @@ class Rat26SParser
             return;
         }
 
-        consume_token();
+        lexer();
     }
 
     void Empty(const std::string& nonterminal)
