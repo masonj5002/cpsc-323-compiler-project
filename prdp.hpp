@@ -26,22 +26,17 @@
 
 using namespace lexical_analysis;
 
-
-// The naming convention is that the function's names are the nonterminals in
-// the assignment documentation for the compiler project 
-
+/**
+ * @class Rat26SParser
+ * 
+ * @brief Object which encapsulates the data and behavior required for a Predictive Recursive Descent Parser (PRDP)
+ * 
+ */
 class Rat26SParser
 {
- private:
-  std::vector<Record> m_records;
-  std::ofstream&      m_output_file_stream;
-  bool                m_print_productions;
-  int                 m_current_token_index;
-  std::string         m_current_production;
-  std::string         m_input_file_name;
-
  public:
- 
+    
+    // Parameterized Constructor
     Rat26SParser(const std::vector<Record>& records, const std::string& input_file_name, std::ofstream& output_file_stream, bool print_productions=true)
      : m_records(records),
        m_output_file_stream(output_file_stream),
@@ -50,6 +45,19 @@ class Rat26SParser
        m_current_production(""),
        m_input_file_name(input_file_name)
      {}
+    
+    void write_productions_to_file()
+    {
+        Rat26S();
+    }
+
+ private:
+    std::vector<Record> m_records;
+    std::ofstream&      m_output_file_stream;
+    bool                m_print_productions;
+    int                 m_current_token_index;
+    std::string         m_current_production;
+    std::string         m_input_file_name;
 
     // Safely get current record with bounds checking
     const Record& get_current_record() const 
@@ -61,20 +69,6 @@ class Rat26SParser
         return m_records[m_current_token_index]; 
     }
 
-    void write_productions_to_file()
-    {
-        Rat26S();
-    }
-
-    void write_production(const std::string& production)
-    {
-        if (m_print_productions)
-        {
-            m_output_file_stream << production;
-        }
-        m_current_production = production;
-    }
-    
     void output_current_token()
     {
         m_output_file_stream << "\nToken: " << std::setw(20) << std::left << get_current_record().token << "Lexeme: " << get_current_record().lexeme << '\n';
@@ -85,6 +79,15 @@ class Rat26SParser
         ++m_current_token_index;
     }
     
+    void write_production(const std::string& production)
+    {
+        if (m_print_productions)
+        {
+            m_output_file_stream << production;
+        }
+        m_current_production = production;
+    }
+
     void output_error(const std::string& expected_message)
     {
         m_output_file_stream << "\nSyntax Error in " << m_input_file_name << " on line " << get_current_record().line << " with\n"
@@ -99,6 +102,10 @@ class Rat26SParser
     {
         return first_set.count(get_current_record().lexeme) || first_set.count(get_current_record().token);
     }
+
+
+    /*  Below are functions that simulate the productions of the Rat26S Grammar */
+
 
     void Rat26S()
     {

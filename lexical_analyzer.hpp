@@ -220,8 +220,7 @@ namespace lexical_analysis
                         current_char += i - 1;
                     }
 
-                    // Write the token and lexeme to the output file
-                    // output_file_stream << std::setw(20) << std::left << result.token << ' ' << result.lexeme << '\n';
+                    // Add the final result to the working list of tokens and lexemes
                     result.line = current_line_number;
                     records.push_back(result);
 
@@ -287,8 +286,7 @@ namespace lexical_analysis
                     // version of the integer
                     if (!real_number_found) result = lexer(current_substr);
 
-                    // Write the token and lexeme to the output file
-                    // output_file_stream << std::setw(20) << std::left << result.token << ' ' << result.lexeme << '\n';
+                    // Add the final result to the working list of tokens and lexemes
                     result.line = current_line_number;
                     records.push_back(result);
 
@@ -296,8 +294,7 @@ namespace lexical_analysis
                 }
                 else if (result.token == "separator")
                 {
-                    // Write the token and lexeme to the output file
-                    // output_file_stream << std::setw(20) << std::left << result.token << ' ' << result.lexeme << '\n';
+                    // Add the final result to the working list of tokens and lexemes
                     result.line = current_line_number;
                     records.push_back(result);
 
@@ -341,8 +338,7 @@ namespace lexical_analysis
                         }
                     }
                     
-                    // Write the token and lexeme to the output file
-                    // output_file_stream << std::setw(20) << std::left << result.token << ' ' << result.lexeme << '\n';
+                    // Add the final result to the working list of tokens and lexemes
                     result.line = current_line_number;
                     records.push_back(result);
                     
@@ -359,11 +355,6 @@ namespace lexical_analysis
                     current_char += count;
                     continue;
                 }
-
-                /*
-                maybe you can do a while and keep adding as long as the result Record is still unknown
-                (might work might not idk)
-                */
 
                 count += 1;
             }

@@ -27,10 +27,9 @@
 
 #include "fsm.hpp"
 #include "lexical_analyzer.hpp"
-#include "syntax_analyzer.hpp"
+#include "prdp.hpp"
 
 using namespace lexical_analysis;
-using namespace syntax_analysis;
 
 int main(int argc, char* argv[])
 {
@@ -64,20 +63,9 @@ int main(int argc, char* argv[])
         return -1;
     }
     
-    // // Header for the output file
-    // output_file_stream << std::setw(20) << std::left << "token" << "lexeme\n"
-    //                    << "---------------------------\n"; 
-
-
 
     // List that holds the results of the lexical analyzer
     std::vector<Record> records = lexical_analyzer(input_file_stream);
-    
-    // Write everything to the output file
-    // for (const Record& record : records)
-    // {
-    //     std::cout << std::setw(20) << std::left << record.token << ' ' << record.lexeme << '\n';
-    // }
 
     for (const Record& record : records)
     {
@@ -86,7 +74,8 @@ int main(int argc, char* argv[])
             std::cout << "Lexical Error: Unknown token classification on line " << record.line << " with a lexeme of: " << record.lexeme << '\n';
         }
     }
-    
+
+    // Begin syntax analysis
     Rat26SParser parser(records, INPUT_FILE_NAME, output_file_stream, true);
     parser.write_productions_to_file();
 
