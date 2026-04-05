@@ -437,7 +437,7 @@ class Rat26SParser
         Statement_List_Prime();
     }
 
-    // Simulates <Statement List Prime> ::= <Empty> | <Statement List>
+    // Simulates <Statement List Prime> ::= <Statement List> | <Empty>
     void Statement_List_Prime()
     {
         static const std::unordered_set<std::string> first_set = {"{", "identifier", "if", "return", "write", "read", "while"};
