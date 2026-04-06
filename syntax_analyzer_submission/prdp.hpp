@@ -44,7 +44,7 @@ class Rat26SParser
        m_current_token_index(0),
        m_current_production(""),
        m_input_file_name(input_file_name)
-     {}
+       {}
     
     void write_productions_to_file()
     {
@@ -102,15 +102,21 @@ class Rat26SParser
         m_current_production = production;
     }
     
-    // Writes to the output file a formatted syntax error message that includes the token, lexeme,
+    // Writes to the output file and console output a formatted syntax error message that includes the token, lexeme,
     // expected message, and the current production that was violated.
     void output_error(const std::string& expected_message)
     {
-        m_output_file_stream << "\nSyntax Error in " << m_input_file_name << " on line " << get_current_record().line << " with\n"
+        m_output_file_stream << "\nRat26S Syntax Error in " << m_input_file_name << " on line " << get_current_record().line << " with\n"
                              << "\tToken       : " << get_current_record().token  << '\n'
                              << "\tLexeme      : " << get_current_record().lexeme << '\n'
                              << "\tExpected    : " << expected_message            << '\n'
                              << "\tViolation of: " << m_current_production        << '\n';
+        
+        std::cout << "\nRat26S Syntax Error in " << m_input_file_name << " on line " << get_current_record().line << " with\n"
+                  << "\tToken       : " << get_current_record().token  << '\n'
+                  << "\tLexeme      : " << get_current_record().lexeme << '\n'
+                  << "\tExpected    : " << expected_message            << '\n'
+                  << "\tViolation of: " << m_current_production        << '\n';
     }
 
     // Helper function to check if current token is in a set
@@ -1037,7 +1043,7 @@ class Rat26SParser
     void Empty(const std::string& nonterminal)
     {
         write_production(nonterminal + " -> ");
-        write_production(u8"\u03B5");
+        write_production("\u03B5");
         write_production("\n");
     }
 };

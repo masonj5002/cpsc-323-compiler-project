@@ -1043,7 +1043,7 @@ class Rat26SParser
     void Empty(const std::string& nonterminal)
     {
         write_production(nonterminal + " -> ");
-        write_production(u8"\u03B5");
+        write_production("\u03B5");
         write_production("\n");
     }
 };
