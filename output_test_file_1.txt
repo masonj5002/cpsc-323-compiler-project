@@ -1,6 +1,7 @@
+
 <Rat26S> -> @ <Opt Function Definitions> @ <Opt Declaration List> @ <Statement List> @
 
-Syntax Error in input_test_file_1.txt on line 1 with
+Rat26S Syntax Error in input_test_file_1.txt on line 1 with
 	Token       : keyword
 	Lexeme      : if
 	Expected    : @
