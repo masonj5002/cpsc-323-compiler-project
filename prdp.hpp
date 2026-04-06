@@ -44,7 +44,7 @@ class Rat26SParser
        m_current_token_index(0),
        m_current_production(""),
        m_input_file_name(input_file_name)
-     {}
+       {}
     
     void write_productions_to_file()
     {
