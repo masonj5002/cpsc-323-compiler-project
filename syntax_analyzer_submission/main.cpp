@@ -67,13 +67,16 @@ int main(int argc, char* argv[])
     // List that holds the results of the lexical analyzer
     std::vector<Record> records = lexical_analyzer(input_file_stream);
 
+    // Check if something in the source code was unable to be identified
     for (const Record& record : records)
     {
         if (record.token == "unknown")
         {
-            std::cout << "Lexical Error: Unknown token classification on line " << record.line << " with a lexeme of: " << record.lexeme << '\n';
+            std::cout          << "Rat26S Compiler Lexical Error: Unknown token classification in " << INPUT_FILE_NAME << " on line " << record.line << " with a lexeme of: " << record.lexeme << '\n';
+            output_file_stream << "Rat26S Compiler Lexical Error: Unknown token classification in " << INPUT_FILE_NAME << " on line " << record.line << " with a lexeme of: " << record.lexeme << '\n';
         }
     }
+    output_file_stream << '\n';
 
     // Begin syntax analysis
     Rat26SParser parser(records, INPUT_FILE_NAME, output_file_stream, true);

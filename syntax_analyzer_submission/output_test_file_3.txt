@@ -1,3 +1,4 @@
+
 <Rat26S> -> @ <Opt Function Definitions> @ <Opt Declaration List> @ <Statement List> @
 
 Token: separator           Lexeme: @
@@ -44,7 +45,7 @@ Token: separator           Lexeme: {
 Token: keyword             Lexeme: return
 <Statement> -> <Return>
 <Return> -> return <Return Prime>
-<Return Prime> -> <Expression>
+<Return Prime> -> <Expression> ;
 <Expression> -> <Term> <Expression Prime>
 <Term> -> <Factor> <Term Prime>
 <Factor> -> <Primary>
@@ -141,7 +142,7 @@ Token: separator           Lexeme: )
 Token: keyword             Lexeme: return
 <Statement> -> <Return>
 <Return> -> return <Return Prime>
-<Return Prime> -> <Expression>
+<Return Prime> -> <Expression> ;
 <Expression> -> <Term> <Expression Prime>
 <Term> -> <Factor> <Term Prime>
 <Factor> -> - <Primary>
@@ -163,7 +164,7 @@ Token: keyword             Lexeme: fi
 Token: keyword             Lexeme: return
 <Statement> -> <Return>
 <Return> -> return <Return Prime>
-<Return Prime> -> <Expression>
+<Return Prime> -> <Expression> ;
 <Expression> -> <Term> <Expression Prime>
 <Term> -> <Factor> <Term Prime>
 <Factor> -> <Primary>
@@ -248,7 +249,7 @@ Token: separator           Lexeme: ;
 
 Token: keyword             Lexeme: write
 <Statement> -> <Print>
-<Print> -> write ( <Expression> );
+<Print> -> write ( <Expression> ) ;
 
 Token: separator           Lexeme: (
 <Expression> -> <Term> <Expression Prime>
@@ -269,7 +270,7 @@ Token: separator           Lexeme: ;
 
 Token: keyword             Lexeme: write
 <Statement> -> <Print>
-<Print> -> write ( <Expression> );
+<Print> -> write ( <Expression> ) ;
 
 Token: separator           Lexeme: (
 <Expression> -> <Term> <Expression Prime>
@@ -290,7 +291,7 @@ Token: separator           Lexeme: ;
 
 Token: keyword             Lexeme: write
 <Statement> -> <Print>
-<Print> -> write ( <Expression> );
+<Print> -> write ( <Expression> ) ;
 
 Token: separator           Lexeme: (
 <Expression> -> <Term> <Expression Prime>
@@ -311,7 +312,7 @@ Token: separator           Lexeme: ;
 
 Token: keyword             Lexeme: write
 <Statement> -> <Print>
-<Print> -> write ( <Expression> );
+<Print> -> write ( <Expression> ) ;
 
 Token: separator           Lexeme: (
 <Expression> -> <Term> <Expression Prime>
@@ -346,7 +347,7 @@ Token: separator           Lexeme: ;
 
 Token: keyword             Lexeme: write
 <Statement> -> <Print>
-<Print> -> write ( <Expression> );
+<Print> -> write ( <Expression> ) ;
 
 Token: separator           Lexeme: (
 <Expression> -> <Term> <Expression Prime>
