@@ -19,8 +19,11 @@
 #include <string>
 #include <fstream>
 #include <iomanip>
+#include <unordered_map>
 #include <unordered_set>
 #include <stdexcept>
+#include <stack>
+#include <tuple>
 
 #include "lexical_analyzer.hpp"
 #include "symbol_table_entry.cpp"
@@ -45,7 +48,9 @@ class Rat26SParser
        m_current_token_index(0),
        m_current_production(""),
        m_input_file_name(input_file_name),
-       current_memory_address(1000) // starting address value (Assignment 3)
+       current_memory_address(10000), // starting address value (Assignment 3)
+       current_type("Unknown"),
+       m_instruction_address(1)
        {}
     
     void write_productions_to_file()
@@ -67,8 +72,10 @@ class Rat26SParser
     std::string         m_input_file_name;
     int current_memory_address; // Assignment 3
     std::vector<SymbolTableEntry> symbol_table; // Assignment 3
-    
-
+    std::string current_type;
+    std::size_t m_instruction_address;
+    std::stack<std::size_t> jmpz_stack;
+    std::vector<std::tuple<std::string, std::string, std::string>> m_instruction_table;
     // ----------------------------------
     // Helper functions
     // ----------------------------------
@@ -86,18 +93,13 @@ class Rat26SParser
     // Writes the current token and lexeme to the output file
     void output_current_token()
     {
-        m_output_file_stream << "\nToken: " << std::setw(20) << std::left << get_current_record().token << "Lexeme: " << get_current_record().lexeme << '\n';
-        
-        // Assignment 3
-        if (get_current_record().token == "identifier") {
-            // create entry and add to table
-            // 
-            // must check to make sure entry exists
-            // cannot add an undeclared identifier
-            // cannot add an identifier that's been declared twice
-            symbol_table.push_back(SymbolTableEntry(get_current_record().lexeme, use_address(), ""/*type goes here*/)); 
+        if (m_print_productions)
+        {
+            m_output_file_stream << "\nToken: " << std::setw(20) << std::left << get_current_record().token << "Lexeme: " << get_current_record().lexeme << '\n';
         }
     }
+
+// ================================================== ASSIGNMENT 3 STUFF (DELETE THESE LINES WHEN FINISHED) =============================================
 
     // Assignment 3
     // returns the current memory address and increments it by one
@@ -105,6 +107,121 @@ class Rat26SParser
         current_memory_address++;
         return current_memory_address - 1;
     }
+
+
+    // Insert the current lexeme into the symbol table
+    void insertSymbol()
+    {   
+        symbol_table.push_back(SymbolTableEntry(get_current_record().lexeme, use_address(), current_type));
+    }
+
+    
+    // Check if the symbol is already in the symbol table
+    bool check_symbol_existence()
+    {
+        for (const auto& symbol_entry : symbol_table)
+        {
+            if (symbol_entry.identifier_ == get_current_record().lexeme)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    
+    // Get address of a symbol
+    int get_address(const std::string& id)
+    {
+        for (const auto& symbol_entry : symbol_table)
+        {
+            if (symbol_entry.identifier_ == id)
+            {
+                return symbol_entry.memoryAddress_;
+            }
+        }
+
+        return -1; // -1 indicating that the identifier does not exist in the symbol table
+    }
+    
+    // Print the entire symbol table
+    void print_symbol_table()
+    {
+        m_output_file_stream << '\n';
+        std::cout            << '\n';
+
+        m_output_file_stream << std::setw(30) << std::right << "Symbol Table\n";
+        m_output_file_stream << std::setw(20) << std::left << "Identifier" << std::setw(20) << std::left << "MemoryLocation" << std::setw(20) << std::left << "Type" << '\n';;
+
+        std::cout << std::setw(30) << std::right << "Symbol Table\n";
+        std::cout << std::setw(20) << std::left << "Identifier" << std::setw(20) << std::left << "MemoryLocation" << std::setw(20) << std::left << "Type" << '\n';
+
+        for (const auto& symbol_entry : symbol_table ) {
+            m_output_file_stream << std::setw(20) << std::left << symbol_entry.identifier_ << std::setw(20) << std::left << symbol_entry.memoryAddress_ << std::setw(20) << std::left << symbol_entry.type_ << '\n';
+            std::cout            << std::setw(20) << std::left << symbol_entry.identifier_ << std::setw(20) << std::left << symbol_entry.memoryAddress_ << std::setw(20) << std::left << symbol_entry.type_ << '\n';
+        }
+    }
+
+    
+    // Output a semantic error
+    void output_semantic_error(const std::string& error_description)
+    {
+        m_output_file_stream << "\nRat26S Semantic Error in " << m_input_file_name << " on line " << get_current_record().line << " with\n"
+                             << "\tToken       : " << get_current_record().token   << '\n'
+                             << "\tLexeme      : " << get_current_record().lexeme  << '\n'
+                             << '\t'               << error_description            << '\n';
+        
+        std::cout << "\nRat26S Semantic Error in " << m_input_file_name << " on line " << get_current_record().line << " with\n"
+                  << "\tToken       : " << get_current_record().token   << '\n'
+                  << "\tLexeme      : " << get_current_record().lexeme  << '\n'
+                  << '\t'               << error_description            << '\n';
+    }
+
+
+    // Generate an assembly instruction
+    void generate_instruction(const std::string& instruction_operation, const std::string& operand)
+    {
+        // if (instruction_operation == "PUSHM")
+        // {
+        //     memory_address_stack.push(operand);
+        // }
+        // else if (instruction_operation == "POPM")
+        // {
+        //     memory_address_stack.pop();
+        // }
+
+        m_instruction_table.push_back(std::make_tuple(std::to_string(m_instruction_address), instruction_operation, operand));
+
+        // m_output_file_stream << std::setw(10) << std::left << m_instruction_address << std::setw(10) << std::left << instruction_operation << std::setw(10) << std::left << operand << '\n';
+        // std::cout            << std::setw(10) << std::left << m_instruction_address << std::setw(10) << std::left << instruction_operation << std::setw(10) << std::left << operand << '\n';
+        
+        ++m_instruction_address;
+    }
+
+    // Takes in the instruction address of a JMP instruction and 
+    // replaces the operand with the new current instruction address
+    void back_patch(const std::size_t& jmp_instruction_address)
+    {
+        // std::get<2>(m_instruction_table[jmp_instruction_address - 1]) = std::to_string(m_instruction_address);
+
+        std::size_t jmpz_address = jmpz_stack.top();
+        jmpz_stack.pop();
+
+        std::get<2>(m_instruction_table[jmpz_address - 1]) = std::to_string(jmp_instruction_address);
+
+    }
+
+    void print_instruction_table()
+    {
+        for (const auto& t : m_instruction_table)
+        {
+            m_output_file_stream << std::setw(10) << std::left << std::get<0>(t) << std::setw(10) << std::left << std::get<1>(t) << std::setw(10) << std::left << std::get<2>(t) << '\n';
+            std::cout            << std::setw(10) << std::left << std::get<0>(t) << std::setw(10) << std::left << std::get<1>(t) << std::setw(10) << std::left << std::get<2>(t) << '\n';
+        }
+    }
+
+// ================================================== ASSIGNMENT 3 STUFF (DELETE THESE LINES WHEN FINISHED) =============================================
+
 
     // Moves to the next token in the list of tokens and lexemes (list of Record objects)
     void lexer()
@@ -204,12 +321,9 @@ class Rat26SParser
             output_error("end of file");
         }
 
-        // Assignment 3 test:
-        std::cout << "Symbol Table\n";
-        std::cout << "Identifier    MemoryLocation    Type\n";
-        for (const SymbolTableEntry& entry : symbol_table ) {
-            std::cout << entry.identifier_ << "    " << entry.memoryAddress_ << "    " << entry.type_ << "\n";
-        }
+        // Assignment 3: Display the results
+        print_instruction_table();
+        print_symbol_table();
     }
     
     // Simulates <Opt Function Definitions> ::= <Function Definitions> | <Empty>
@@ -327,7 +441,7 @@ class Rat26SParser
         else Empty("<Parameter List Prime>");
     }
 
-    // Simulates <Parameter> ::= <IDs > <Qualifier>
+    // Simulates <Parameter> ::= <IDs> <Qualifier>
     void Parameter()
     {
         write_production("<Parameter> -> <IDs> <Qualifier>\n");
@@ -348,7 +462,10 @@ class Rat26SParser
         }
 
         write_production("<Qualifier> -> " + get_current_record().lexeme + '\n');
-
+        
+        // Assignment 3 
+        current_type = get_current_record().lexeme;
+        
         output_current_token();
         lexer();
     }
@@ -426,29 +543,58 @@ class Rat26SParser
         else Empty("<Declaration List Prime>");
     }
 
-    // Simulates <Declaration> ::= <Qualifier > <IDs>
+    // Simulates <Declaration> ::= <Qualifier> <IDs>
     void Declaration()
     {
         write_production("<Declaration> -> <Qualifier> <IDs>\n");
 
-        Qualifier();
-        IDs();
+
+        //TODO : some stuff I have figured out yet but we are supposed to check for multiple declarations  ================================================================== Assignment 3
+        Qualifier(); // This function will also update the current type when it finishes
+
+        IDs(true);
     }
 
     // Simulates <IDs> ::= <Identifier> <IDs Prime>
-    void IDs()
+    void IDs(bool is_declaration=false)
     {
         write_production("<IDs> -> <Identifier> <IDs Prime>\n");
         
         if (get_current_record().token == "identifier")
+        {
             output_current_token();
-        
+
+            if (!is_declaration)
+            {   
+                if (check_symbol_existence())
+                {
+                    generate_instruction("PUSHM", std::to_string(get_address(get_current_record().lexeme)));
+                }
+                if (!check_symbol_existence()) // <--- change to else if you eventually use the above clause
+                {
+                    output_semantic_error("Undefined identifier");
+                }
+            }
+            else
+            {
+                if(!check_symbol_existence())
+                {
+                    insertSymbol();
+                }
+                else
+                {
+                    output_semantic_error("Multiple declarations of identifier");
+                }
+            }
+            
+        }
+
         Identifier();
-        IDs_Prime();
+        IDs_Prime(is_declaration);
     }
 
     // Simulates <IDs Prime> ::= , <IDs> | <Empty>
-    void IDs_Prime()
+    void IDs_Prime(bool is_declaration=false)
     {
         if (get_current_record().lexeme == ",")
         {
@@ -457,7 +603,7 @@ class Rat26SParser
             output_current_token();
             lexer();
             
-            IDs();
+            IDs(is_declaration);
         }
         else Empty("<IDs Prime>");
     }
@@ -568,6 +714,22 @@ class Rat26SParser
     {
         write_production("<Assign> -> <Identifier> = <Expression> ;\n");
 
+        // std::string identifier_type = "unknown";
+        // if (get_current_record().token == "identifier")
+        // {
+        //     // Check if the identifier is already in the symbol table
+        //     if (check_symbol_existence())
+        //     {
+        //         identifier_type = symbol_table[get_current_record().lexeme].type_;  <--- for some reason I get an error here and I was having trouble solving it
+        //     }
+        //     else
+        //     {
+        //         output_semantic_error("Identifier was not declared");
+        //     }
+        // }
+
+        std::string save = get_current_record().lexeme;
+
         Identifier();
 
         if (get_current_record().lexeme != "=")
@@ -579,14 +741,18 @@ class Rat26SParser
         output_current_token();
         lexer();
         
+
+        // TODO (DELETE THIS WHEN FINISHED): We need to be able to determine the overall type of the <Expression> ================================================================ Assignment 3
+        // so that we can compare the identifier's type with the expression's type for type checking.
         Expression();
+        generate_instruction("POPM", std::to_string(get_address(save)));
 
         if (get_current_record().lexeme != ";")
         {
             output_error(";");
         }
 
-        output_current_token(); // <------------- DOUBLE CHECK
+        output_current_token(); 
         lexer();
     }   
 
@@ -709,7 +875,7 @@ class Rat26SParser
         }
     }
 
-    // Simulates <Print> ::= write ( <Expression>) ;
+    // Simulates <Print> ::= write ( <Expression> ) ;
     void Print()
     {
         write_production("<Print> -> write ( <Expression> ) ;\n");
@@ -732,6 +898,11 @@ class Rat26SParser
         lexer();
 
         Expression();
+
+        // if (!memory_address_stack.empty())
+        // {
+        //     generate_instruction("SOUT", "");
+        // }
 
         if (get_current_record().lexeme != ")")
         {
@@ -799,12 +970,15 @@ class Rat26SParser
     void While()
     {
         write_production("<While> -> while ( <Condition> ) <Statement>\n");
-        
+
         if (get_current_record().lexeme != "while")
         {
             output_error("while");
             return;
         }
+
+        int top_of_loop_instruction_address = m_instruction_address;
+        generate_instruction("LABEL", "nil");
 
         output_current_token();
         lexer();
@@ -830,6 +1004,9 @@ class Rat26SParser
         lexer();
 
         Statement();
+
+        generate_instruction("JMP", std::to_string(top_of_loop_instruction_address));
+        back_patch(m_instruction_address);
     }
 
     // Simulates <Condition> ::= <Expression> <Relop> <Expression>
@@ -838,8 +1015,47 @@ class Rat26SParser
         write_production("<Condition> -> <Expression> <Relop> <Expression>\n");
         
         Expression();
+
+        std::string current_operator = get_current_record().lexeme;
         Relop();
         Expression();
+
+        if (current_operator == "<")
+        {
+            generate_instruction("LES", "nil");
+            jmpz_stack.push(m_instruction_address);
+            generate_instruction("JMPZ", "nil");
+        }
+        else if (current_operator == ">")
+        {
+            generate_instruction("GRT", "nil");
+            jmpz_stack.push(m_instruction_address);
+            generate_instruction("JMPZ", "nil");
+        }
+        else if (current_operator == "==")
+        {
+            generate_instruction("EQU", "nil");
+            jmpz_stack.push(m_instruction_address);
+            generate_instruction("JMPZ", "nil");
+        }
+        else if (current_operator == "<=")
+        {
+            generate_instruction("LEQ", "nil");
+            jmpz_stack.push(m_instruction_address);
+            generate_instruction("JMPZ", "nil");
+        }
+        else if (current_operator == "=>")
+        {
+            generate_instruction("GEQ", "nil");
+            jmpz_stack.push(m_instruction_address);
+            generate_instruction("JMPZ", "nil");
+        }
+        else if (current_operator == "!=")
+        {
+            generate_instruction("NEQ", "nil");
+            jmpz_stack.push(m_instruction_address);
+            generate_instruction("JMPZ", "nil");
+        }
     }
 
     // Simulates <Relop> ::= == | != | > | < | <= | =>
@@ -879,6 +1095,9 @@ class Rat26SParser
             lexer();
 
             Term();
+
+            generate_instruction("A", "nil");
+
             Expression_Prime();
         }
         else if (get_current_record().lexeme == "-")
@@ -889,6 +1108,8 @@ class Rat26SParser
             lexer();
 
             Term();
+            generate_instruction("S", "nil"); // <-- DOUBLE CHECK. NOT SURE
+
             Expression_Prime();
         }
         else Empty("<Expression Prime>");
@@ -914,6 +1135,9 @@ class Rat26SParser
             lexer();
             
             Factor();
+
+            generate_instruction("M", "nil");
+
             Term_Prime();
         }
         else if (get_current_record().lexeme == "/")
@@ -923,6 +1147,9 @@ class Rat26SParser
             lexer();
             
             Factor();
+
+            generate_instruction("D", "nil");
+
             Term_Prime();
         }
         else Empty("<Term Prime>");
@@ -956,13 +1183,19 @@ class Rat26SParser
             
             output_current_token();
             
+            generate_instruction("PUSHM", std::to_string(get_address(get_current_record().lexeme)));
+
             Identifier();
+            
             Primary_Prime();
         }
         else if (get_current_record().token == "integer")
         {
             write_production("<Primary> -> <Integer>\n");
             output_current_token();
+
+            generate_instruction("PUSHI", get_current_record().lexeme);
+
             Integer();
         }
         else if (get_current_record().lexeme == "(")
@@ -992,7 +1225,7 @@ class Rat26SParser
         else if (get_current_record().lexeme == "true")
         {
             write_production("<Primary> -> true\n");
-            output_current_token();
+            output_current_token();                         // might have to do something about booleans but not sure yet so just leaving this as a marker
             lexer();
         }
         else if (get_current_record().lexeme == "false")
@@ -1040,6 +1273,8 @@ class Rat26SParser
             return;
         }
 
+        // MOST RECENT THING ADDED ================================================================================ RIGHT HERE
+        // generate_instruction("PUSHM", std::to_string(get_address(get_current_record().lexeme)));
         lexer();
     }
 
