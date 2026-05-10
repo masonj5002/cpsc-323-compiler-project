@@ -75,6 +75,7 @@ class Rat26SParser
     std::string current_type;
     std::size_t m_instruction_address;
     std::stack<std::size_t> jmpz_stack;
+    std::stack<std::string> id_stack;
     std::vector<std::tuple<std::string, std::string, std::string>> m_instruction_table;
     std::string current_qualifier; // not sure if this will work...
     
@@ -240,8 +241,8 @@ class Rat26SParser
     {
         for (const auto& t : m_instruction_table)
         {
-            m_output_file_stream << std::setw(10) << std::left << std::get<0>(t) << std::setw(10) << std::left << std::get<1>(t) << std::setw(10) << std::left << std::get<2>(t) << '\n';
-            std::cout            << std::setw(10) << std::left << std::get<0>(t) << std::setw(10) << std::left << std::get<1>(t) << std::setw(10) << std::left << std::get<2>(t) << '\n';
+            m_output_file_stream << std::setw(10) << std::left << std::get<0>(t) << std::setw(10) << std::left << std::get<1>(t) << std::setw(10) << std::left << (std::get<2>(t) == "nil" ? "" : std::get<2>(t)) << '\n';
+            std::cout            << std::setw(10) << std::left << std::get<0>(t) << std::setw(10) << std::left << std::get<1>(t) << std::setw(10) << std::left << (std::get<2>(t) == "nil" ? "" : std::get<2>(t)) << '\n';
         }
     }
 
@@ -592,7 +593,8 @@ class Rat26SParser
             {   
                 if (check_symbol_existence())
                 {
-                    generate_instruction("PUSHM", std::to_string(get_address(get_current_record().lexeme)));
+                    // generate_instruction("PUSHM", std::to_string(get_address(get_current_record().lexeme)));
+                    id_stack.push(get_current_record().lexeme);
                 }
                 if (!check_symbol_existence()) // <--- change to else if you eventually use the above clause
                 {
@@ -968,10 +970,21 @@ class Rat26SParser
 
         output_current_token();
         lexer();
-
-        generate_instruction("SIN", "nil");
         
         IDs();
+
+        for (int i = 0; i < id_stack.size(); ++i)
+        {
+            generate_instruction("SIN", "nil");
+        }
+
+        while (!id_stack.empty())
+        {
+            std::string identifier_argument = id_stack.top();
+            id_stack.pop();
+
+            generate_instruction("POPM", std::to_string(get_address(identifier_argument)));
+        }
 
         if (get_current_record().lexeme != ")")
         {
