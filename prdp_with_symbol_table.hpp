@@ -76,6 +76,9 @@ class Rat26SParser
     std::size_t m_instruction_address;
     std::stack<std::size_t> jmpz_stack;
     std::vector<std::tuple<std::string, std::string, std::string>> m_instruction_table;
+    std::string current_qualifier; // not sure if this will work...
+    
+
     // ----------------------------------
     // Helper functions
     // ----------------------------------
@@ -96,6 +99,28 @@ class Rat26SParser
         if (m_print_productions)
         {
             m_output_file_stream << "\nToken: " << std::setw(20) << std::left << get_current_record().token << "Lexeme: " << get_current_record().lexeme << '\n';
+        // m_output_file_stream << "\nToken: " << std::setw(20) << std::left << get_current_record().token << "Lexeme: " << get_current_record().lexeme << '\n';
+        
+        // // Assignment 3
+        // if (get_current_record().token == "identifier") {
+        //     // make sure each identifer is only added once
+        //     //if the identifier being inputed exists in the table, skip it
+        //     //std::vector<SymbolTableEntry>::iterator it = std::find()
+        //     bool push_to_table = true;
+        //     for (const SymbolTableEntry& entry : symbol_table) {
+        //         std::cout << get_current_record().lexeme << " " << entry.identifier_ << "\n";
+        //         if (get_current_record().lexeme == entry.identifier_) {
+        //             if (current_qualifier != entry.type_) {
+        //                 std::cout << current_qualifier << " " << entry.type_ << "\n";
+        //                 std::cout << "note: Throw error\n";
+        //             } else {
+        //                 push_to_table = false;
+        //             }
+        //         }
+        //     }
+        //     if (push_to_table) {
+        //         symbol_table.push_back(SymbolTableEntry(get_current_record().lexeme, use_address(), current_qualifier)); 
+        //     }
         }
     }
 
@@ -463,9 +488,8 @@ class Rat26SParser
 
         write_production("<Qualifier> -> " + get_current_record().lexeme + '\n');
         
-        // Assignment 3 
-        current_type = get_current_record().lexeme;
-        
+        current_type = get_current_record().lexeme; // Assignment 3
+
         output_current_token();
         lexer();
     }
@@ -945,6 +969,8 @@ class Rat26SParser
         output_current_token();
         lexer();
 
+        generate_instruction("SIN", "nil");
+        
         IDs();
 
         if (get_current_record().lexeme != ")")
