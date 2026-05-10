@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
     output_file_stream << '\n';
 
     // Begin syntax analysis
-    Rat26SParser parser(records, INPUT_FILE_NAME, output_file_stream, true);
+    Rat26SParser parser(records, INPUT_FILE_NAME, output_file_stream, false);
     parser.write_productions_to_file();
 
     // Close the file streams
