@@ -1,3 +1,5 @@
 *.o
 main
 map_samples
+syntax_analyzer
+syntax_analyzer.exe
