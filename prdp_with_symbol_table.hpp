@@ -67,6 +67,7 @@ class Rat26SParser
     std::string         m_input_file_name;
     int current_memory_address; // Assignment 3
     std::vector<SymbolTableEntry> symbol_table; // Assignment 3
+    std::string current_qualifier; // not sure if this will work...
     
 
     // ----------------------------------
@@ -90,12 +91,24 @@ class Rat26SParser
         
         // Assignment 3
         if (get_current_record().token == "identifier") {
-            // create entry and add to table
-            // 
-            // must check to make sure entry exists
-            // cannot add an undeclared identifier
-            // cannot add an identifier that's been declared twice
-            symbol_table.push_back(SymbolTableEntry(get_current_record().lexeme, use_address(), ""/*type goes here*/)); 
+            // make sure each identifer is only added once
+            //if the identifier being inputed exists in the table, skip it
+            //std::vector<SymbolTableEntry>::iterator it = std::find()
+            bool push_to_table = true;
+            for (const SymbolTableEntry& entry : symbol_table) {
+                std::cout << get_current_record().lexeme << " " << entry.identifier_ << "\n";
+                if (get_current_record().lexeme == entry.identifier_) {
+                    if (current_qualifier != entry.type_) {
+                        std::cout << current_qualifier << " " << entry.type_ << "\n";
+                        std::cout << "note: Throw error\n";
+                    } else {
+                        push_to_table = false;
+                    }
+                }
+            }
+            if (push_to_table) {
+                symbol_table.push_back(SymbolTableEntry(get_current_record().lexeme, use_address(), current_qualifier)); 
+            }
         }
     }
 
@@ -204,7 +217,7 @@ class Rat26SParser
             output_error("end of file");
         }
 
-        // Assignment 3 test:
+        // Assignment 3 test output:
         std::cout << "Symbol Table\n";
         std::cout << "Identifier    MemoryLocation    Type\n";
         for (const SymbolTableEntry& entry : symbol_table ) {
@@ -348,6 +361,7 @@ class Rat26SParser
         }
 
         write_production("<Qualifier> -> " + get_current_record().lexeme + '\n');
+        current_qualifier = get_current_record().lexeme; // Assignment 3
 
         output_current_token();
         lexer();
