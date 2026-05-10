@@ -7,8 +7,8 @@
     
     Members: Mason Jennings, Gabriel Apodaca, Anthony Jimenez
     
-    Submission Date: 4/5/2026
-    Due Date: 4/5/2026
+    Submission Date: 5/10/2026
+    Due Date: 5/10/2026
     Chosen Language: C++
 
 */
@@ -23,10 +23,9 @@
 #include <stdexcept>
 
 #include "lexical_analyzer.hpp"
+#include "symbol_table_entry.cpp"
 
 using namespace lexical_analysis;
-
-const int MEMORY_ADDRESS = 10000;
 
 /**
  * @class Rat26SParser
@@ -45,7 +44,8 @@ class Rat26SParser
        m_print_productions(print_productions),
        m_current_token_index(0),
        m_current_production(""),
-       m_input_file_name(input_file_name)
+       m_input_file_name(input_file_name),
+       current_memory_address(1000) // starting address value (Assignment 3)
        {}
     
     void write_productions_to_file()
@@ -65,6 +65,8 @@ class Rat26SParser
     int                 m_current_token_index;
     std::string         m_current_production;
     std::string         m_input_file_name;
+    int current_memory_address; // Assignment 3
+    std::vector<SymbolTableEntry> symbol_table; // Assignment 3
     
 
     // ----------------------------------
@@ -85,6 +87,23 @@ class Rat26SParser
     void output_current_token()
     {
         m_output_file_stream << "\nToken: " << std::setw(20) << std::left << get_current_record().token << "Lexeme: " << get_current_record().lexeme << '\n';
+        
+        // Assignment 3
+        if (get_current_record().token == "identifier") {
+            // create entry and add to table
+            // 
+            // must check to make sure entry exists
+            // cannot add an undeclared identifier
+            // cannot add an identifier that's been declared twice
+            symbol_table.push_back(SymbolTableEntry(get_current_record().lexeme, use_address(), ""/*type goes here*/)); 
+        }
+    }
+
+    // Assignment 3
+    // returns the current memory address and increments it by one
+    int use_address() {
+        current_memory_address++;
+        return current_memory_address - 1;
     }
 
     // Moves to the next token in the list of tokens and lexemes (list of Record objects)
@@ -183,6 +202,13 @@ class Rat26SParser
         if (get_current_record().token != "eof")
         {
             output_error("end of file");
+        }
+
+        // Assignment 3 test:
+        std::cout << "Symbol Table\n";
+        std::cout << "Identifier    MemoryLocation    Type\n";
+        for (const SymbolTableEntry& entry : symbol_table ) {
+            std::cout << entry.identifier_ << "    " << entry.memoryAddress_ << "    " << entry.type_ << "\n";
         }
     }
     
