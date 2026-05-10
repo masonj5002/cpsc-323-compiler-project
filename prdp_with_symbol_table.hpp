@@ -3,7 +3,7 @@
     CPSC 323
     Assignment 3 : Syntax Analyzer with Symbol Table
     Description: A syntax analyzer that checks the grammar for a given Rat26S source file using
-    a Predictive Recursive Descent Parser (PRDP).
+    a Predictive Recursive Descent Parser (PRDP). It then records identifiers in a symbol table.
     
     Members: Mason Jennings, Gabriel Apodaca, Anthony Jimenez
     
