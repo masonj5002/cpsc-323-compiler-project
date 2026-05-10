@@ -27,7 +27,7 @@
 
 #include "fsm.hpp"
 #include "lexical_analyzer.hpp"
-#include "prdp.hpp"
+#include "prdp_with_symbol_table.hpp"
 
 using namespace lexical_analysis;
 
