@@ -925,11 +925,8 @@ class Rat26SParser
 
         Expression();
 
-        // if (!memory_address_stack.empty())
-        // {
-        //     generate_instruction("SOUT", "");
-        // }
-
+        generate_instruction("SOUT", "nil");
+        
         if (get_current_record().lexeme != ")")
         {
             output_error(")");
