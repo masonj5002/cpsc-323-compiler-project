@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <stack>
 #include <tuple>
+#include <algorithm>
 
 #include "lexical_analyzer.hpp"
 #include "symbol_table_entry.cpp"
@@ -1287,6 +1288,14 @@ class Rat26SParser
         {
             output_error("identifier");
             return;
+        }
+
+        // check if identifier is undeclared
+        std::vector<SymbolTableEntry>::iterator it  = std::find_if(symbol_table.begin(), symbol_table.end(), [&](const SymbolTableEntry& obj) {
+            return obj.identifier_ == get_current_record().lexeme;
+        });
+        if (it == symbol_table.end()) {
+            output_semantic_error("identifier used without declaration - undeclared variable");
         }
 
         lexer();
