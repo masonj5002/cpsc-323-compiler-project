@@ -79,6 +79,7 @@ class Rat26SParser
     std::stack<std::string> id_stack;
     std::vector<std::tuple<std::string, std::string, std::string>> m_instruction_table;
     std::string current_qualifier; // not sure if this will work...
+    bool checking_boolean_assignment = false;
     
 
     // ----------------------------------------------------------------------------------------------------------------------------------------
@@ -277,6 +278,10 @@ class Rat26SParser
     // comparing types between the sides
     std::string combine_numeric_types(const std::string& left, const std::string& right)
     {
+        if (left == "boolean" || right == "boolean") {
+            output_semantic_error("arithmetic not allowed on boolean values");
+        }
+
         if (!is_numeric(left) || !is_numeric(right))
         {
             output_semantic_error("must be integer or real");
@@ -753,11 +758,22 @@ class Rat26SParser
         lexer();
         
         std::string left_type = get_symbol_type(save);
+
+        bool rhs_is_integer_literal = get_current_record().token == "integer";
+        std::string rhs_value = get_current_record().lexeme;
+
+        checking_boolean_assignment = (left_type == "boolean");
+
         std::string right_type = Expression();
+
+        checking_boolean_assignment = false;
 
         if (left_type == "boolean" && right_type == "integer")
         {
-            // allowed
+            if (!(rhs_is_integer_literal && (rhs_value == "0" || rhs_value == "1")))
+            {
+                output_semantic_error("Type mismatch in assignment: boolean can only be assigned 0 or 1");
+            }
         }
         else if (left_type != "Unknown" && right_type != "Unknown" && left_type != right_type)
         {
@@ -1144,6 +1160,11 @@ class Rat26SParser
     {
         if (get_current_record().lexeme == "+" || get_current_record().lexeme == "-")
         {
+            if (checking_boolean_assignment)
+            {
+                output_semantic_error("Boolean assignment cannot use arithmetic operators");
+            }
+
             std::string op = get_current_record().lexeme;
 
             write_production("<Expression Prime> -> " + op + " <Term> <Expression Prime>\n");
@@ -1182,6 +1203,11 @@ class Rat26SParser
     {
         if (get_current_record().lexeme == "*" || get_current_record().lexeme == "/")
         {
+            if (checking_boolean_assignment)
+            {
+                output_semantic_error("Boolean assignment cannot use arithmetic operators");
+            }
+
             std::string op = get_current_record().lexeme;
 
             write_production("<Term Prime> -> " + op + " <Factor> <Term Prime>\n");
