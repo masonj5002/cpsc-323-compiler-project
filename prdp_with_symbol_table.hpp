@@ -258,6 +258,37 @@ class Rat26SParser
         return first_set.count(get_current_record().lexeme) || first_set.count(get_current_record().token);
     }
 
+    // Returns the type of each identifier
+    std::string get_symbol_type(const std::string& id)
+    {
+        for (const auto& symbol_entry : symbol_table)
+            if (symbol_entry.identifier_ == id)
+                return symbol_entry.type_;
+
+        return "Unknown";
+    }
+
+    // Determines if the identifier is type integer or real
+    bool is_numeric(const std::string& type)
+    {
+        return type == "integer" || type == "real";
+    }
+
+    // comparing types between the sides
+    std::string combine_numeric_types(const std::string& left, const std::string& right)
+    {
+        if (!is_numeric(left) || !is_numeric(right))
+        {
+            output_semantic_error("must be integer or real");
+            return "Unknown";
+        }
+
+        if (left == "real" || right == "real")
+            return "real";
+
+        return "integer";
+    }
+
     
     // ----------------------------------------------------------------------------------------------------------------------------------------
     // Functions that simulate productions
@@ -721,11 +752,18 @@ class Rat26SParser
         output_current_token();
         lexer();
         
+        std::string left_type = get_symbol_type(save);
+        std::string right_type = Expression();
 
-        // TODO (DELETE THIS WHEN FINISHED): We need to be able to determine the overall type of the <Expression> ================================================================ Assignment 3
-        // so that we can compare the identifier's type with the expression's type for type checking.
-        Expression();
-
+        if (left_type == "boolean" && right_type == "integer")
+        {
+            // allowed
+        }
+        else if (left_type != "Unknown" && right_type != "Unknown" && left_type != right_type)
+        {
+            output_semantic_error("Type mismatch in assignment: cannot assign " + right_type + " to " + left_type);
+        }
+        
         generate_instruction("POPM", std::to_string(get_address(save)));
 
         if (get_current_record().lexeme != ";")
@@ -1024,12 +1062,18 @@ class Rat26SParser
     {
         write_production("<Condition> -> <Expression> <Relop> <Expression>\n");
         
-        Expression();
+        std::string left_type = Expression();
 
         std::string current_operator = get_current_record().lexeme;
 
         Relop();
-        Expression();
+
+        std::string right_type = Expression();
+
+        if (left_type != "Unknown" && right_type != "Unknown" && left_type != right_type)
+        {
+            output_semantic_error("Type mismatch in condition: cannot compare " + left_type + " with " + right_type);
+        }
 
         if (current_operator == "<")
         {
@@ -1087,87 +1131,78 @@ class Rat26SParser
     }
 
     // Simulates <Expression> ::= <Term> <Expression Prime>
-    void Expression()
+    std::string Expression()
     {
         write_production("<Expression> -> <Term> <Expression Prime>\n");
 
-        Term();
-        Expression_Prime();
+        std::string left_type = Term();
+        return Expression_Prime(left_type);
     }
 
     // Simulates <Expression Prime> ::= + <Term> <Expression Prime> | - <Term> <Expression Prime> | <Empty>
-    void Expression_Prime()
+    std::string Expression_Prime(std::string left_type)
     {
-        if (get_current_record().lexeme == "+")
+        if (get_current_record().lexeme == "+" || get_current_record().lexeme == "-")
         {
-            write_production("<Expression Prime> -> + <Term> <Expression Prime>\n");
+            std::string op = get_current_record().lexeme;
+
+            write_production("<Expression Prime> -> " + op + " <Term> <Expression Prime>\n");
+
+            output_current_token();
+            lexer();
+
+            std::string right_type = Term();
+            std::string result_type = combine_numeric_types(left_type, right_type);
             
-            output_current_token();
-            lexer();
+            if (op == "+") {
+                generate_instruction("A", "nil");
+            }
+            else if (op == "-") {
+                generate_instruction("S", "nil");
+            }
 
-            Term();
-
-            generate_instruction("A", "nil");
-
-            Expression_Prime();
+            return Expression_Prime(result_type);
         }
-        else if (get_current_record().lexeme == "-")
-        {
-            write_production("<Expression Prime> -> - <Term> <Expression Prime>\n");
 
-            output_current_token();
-            lexer();
-
-            Term();
-            generate_instruction("S", "nil");
-
-            Expression_Prime();
-        }
-        else Empty("<Expression Prime>");
+        Empty("<Expression Prime>");
+        return left_type;
     }
 
     // Simulates <Term> ::= <Factor> <Term Prime>
-    void Term()
+    std::string Term()
     {
         write_production("<Term> -> <Factor> <Term Prime>\n");
         
-        Factor();
-        Term_Prime();
+        std::string left_type = Factor();
+        return Term_Prime(left_type);
     }
 
     // Simulates <Term Prime> ::= * <Factor> <Term Prime> | / <Factor> <Term Prime> | <Empty>
-    void Term_Prime()
+    std::string Term_Prime(std::string left_type)
     {
-        if (get_current_record().lexeme == "*")
+        if (get_current_record().lexeme == "*" || get_current_record().lexeme == "/")
         {
-            write_production("<Term Prime> -> * <Factor> <Term Prime>\n");
+            std::string op = get_current_record().lexeme;
+
+            write_production("<Term Prime> -> " + op + " <Factor> <Term Prime>\n");
 
             output_current_token();
             lexer();
-            
-            Factor();
 
-            generate_instruction("M", "nil");
+            std::string right_type = Factor();
+            std::string result_type = combine_numeric_types(left_type, right_type);
 
-            Term_Prime();
+            generate_instruction(op == "*" ? "M" : "D", "nil");
+
+            return Term_Prime(result_type);
         }
-        else if (get_current_record().lexeme == "/")
-        {
-            write_production("<Term Prime> -> / <Factor> <Term Prime>\n");
-            output_current_token();
-            lexer();
-            
-            Factor();
 
-            generate_instruction("D", "nil");
-
-            Term_Prime();
-        }
-        else Empty("<Term Prime>");
+        Empty("<Term Prime>");
+        return left_type;
     }
 
     // Simulates <Factor> ::= - <Primary> | <Primary>
-    void Factor()
+    std::string Factor()
     {
         if (get_current_record().lexeme == "-")
         {
@@ -1175,30 +1210,36 @@ class Rat26SParser
 
             output_current_token();
             lexer();
-            Primary();
-        }
-        else
-        {
-            write_production("<Factor> -> <Primary>\n");
 
-            Primary();
+            std::string type = Primary();
+
+            if (!is_numeric(type))
+                output_semantic_error("minus requires integer or real");
+
+            return type;
         }
+
+        write_production("<Factor> -> <Primary>\n");
+        return Primary();
     }
 
     // Simulates <Primary> ::= <Identifier> <Primary Prime> | <Integer> | ( <Expression> ) | <Real> | true | false
-    void Primary()
+    std::string Primary()
     {
         if (get_current_record().token == "identifier")
         {
             write_production("<Primary> -> <Identifier> <Primary Prime>\n");
-            
+
+            std::string id = get_current_record().lexeme;
+            std::string type = get_symbol_type(id);
+
             output_current_token();
-            
-            generate_instruction("PUSHM", std::to_string(get_address(get_current_record().lexeme)));
+            generate_instruction("PUSHM", std::to_string(get_address(id)));
 
             Identifier();
-            
             Primary_Prime();
+
+            return type;
         }
         else if (get_current_record().token == "integer")
         {
@@ -1206,8 +1247,18 @@ class Rat26SParser
             output_current_token();
 
             generate_instruction("PUSHI", get_current_record().lexeme);
-
             Integer();
+
+            return "integer";
+        }
+        else if (get_current_record().token == "real")
+        {
+            write_production("<Primary> -> <Real>\n");
+            output_current_token();
+
+            Real();
+
+            return "real";
         }
         else if (get_current_record().lexeme == "(")
         {
@@ -1216,45 +1267,22 @@ class Rat26SParser
             output_current_token();
             lexer();
 
-            Expression();
+            std::string type = Expression();
 
             if (get_current_record().lexeme != ")")
             {
                 output_error(")");
-                return;
+                return "Unknown";
             }
 
             output_current_token();
             lexer();
-        }
-        else if (get_current_record().token == "real")
-        {
-            write_production("<Primary> -> <Real>\n");
-            output_current_token();
-            Real();
-        }
-        else if (get_current_record().lexeme == "true")
-        {
-            write_production("<Primary> -> true\n");
 
-            generate_instruction("PUSHI", "1");
-
-            output_current_token();                         
-            lexer();
+            return type;
         }
-        else if (get_current_record().lexeme == "false")
-        {
-            write_production("<Primary> -> false\n");
 
-            generate_instruction("PUSHI", "0");
-
-            output_current_token();
-            lexer();
-        }
-        else
-        {
-            output_error("primary that starts with identifier, integer, (, real, true, or false");
-        }
+        output_error("primary that starts with identifier, integer, (, real, true, or false");
+        return "Unknown";
     }
 
     // Simulates <Primary Prime> ::= ( IDs ) | <Empty>
