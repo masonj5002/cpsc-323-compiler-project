@@ -27,7 +27,7 @@
 #include <algorithm>
 
 #include "lexical_analyzer.hpp"
-#include "symbol_table_entry.cpp"
+#include "symbol_table_entry.hpp"
 
 using namespace lexical_analysis;
 
@@ -49,8 +49,8 @@ class Rat26SParser
        m_current_token_index(0),
        m_current_production(""),
        m_input_file_name(input_file_name),
-       current_memory_address(10000), // starting address value (Assignment 3)
-       current_type("Unknown"),
+       m_current_memory_address(10000), // starting address value (Assignment 3)
+       m_current_type("Unknown"),
        m_instruction_address(1)
        {}
     
@@ -71,15 +71,18 @@ class Rat26SParser
     int                 m_current_token_index;
     std::string         m_current_production;
     std::string         m_input_file_name;
-    int current_memory_address; // Assignment 3
-    std::vector<SymbolTableEntry> symbol_table; // Assignment 3
-    std::string current_type;
-    std::size_t m_instruction_address;
-    std::stack<std::size_t> jmpz_stack;
-    std::stack<std::string> id_stack;
+
+
+    // Assignment 3 added attributes
+    int                           m_current_memory_address;
+    std::vector<SymbolTableEntry> m_symbol_table; 
+    std::string                   m_current_type;
+    std::size_t                   m_instruction_address;
+    std::stack<std::size_t>       m_jmp_stack;
+    std::stack<std::string>       m_id_stack;
+    bool                          m_checking_boolean_assignment = false;
+
     std::vector<std::tuple<std::string, std::string, std::string>> m_instruction_table;
-    std::string current_qualifier; // not sure if this will work...
-    bool checking_boolean_assignment = false;
     
 
     // ----------------------------------------------------------------------------------------------------------------------------------------
@@ -88,22 +91,22 @@ class Rat26SParser
 
     // Returns the current memory address and increments it by one
     int use_address() {
-        current_memory_address++;
-        return current_memory_address - 1;
+        m_current_memory_address++;
+        return m_current_memory_address - 1;
     }
 
 
     // Insert the current lexeme into the symbol table
     void insertSymbol()
     {   
-        symbol_table.push_back(SymbolTableEntry(get_current_record().lexeme, use_address(), current_type));
+        m_symbol_table.push_back(SymbolTableEntry(get_current_record().lexeme, use_address(), m_current_type));
     }
 
     
     // Check if the symbol is already in the symbol table
     bool check_symbol_existence()
     {
-        for (const auto& symbol_entry : symbol_table)
+        for (const auto& symbol_entry : m_symbol_table)
         {
             if (symbol_entry.identifier_ == get_current_record().lexeme)
             {
@@ -117,7 +120,7 @@ class Rat26SParser
     // Get address of a symbol
     int get_address(const std::string& id)
     {
-        for (const auto& symbol_entry : symbol_table)
+        for (const auto& symbol_entry : m_symbol_table)
         {
             if (symbol_entry.identifier_ == id)
             {
@@ -125,7 +128,7 @@ class Rat26SParser
             }
         }
 
-        return -1; // -1 indicating that the identifier does not exist in the symbol table
+        return 0; // 0 indicating that the identifier does not exist in the symbol table
     }
     
     // Output the entire symbol table to standard output and to the specified output file stream
@@ -143,7 +146,7 @@ class Rat26SParser
             std::cout << std::setw(20) << std::left << "Identifier" << std::setw(20) << std::left << "MemoryLocation" << std::setw(20) << std::left << "Type" << '\n';
         }
 
-        for (const auto& symbol_entry : symbol_table ) {
+        for (const auto& symbol_entry : m_symbol_table ) {
             m_output_file_stream << std::setw(20) << std::left << symbol_entry.identifier_ << std::setw(20) << std::left << symbol_entry.memoryAddress_ << std::setw(20) << std::left << symbol_entry.type_ << '\n';
             
             if (output_to_console)
@@ -153,17 +156,29 @@ class Rat26SParser
 
     
     // Output a semantic error
-    void output_semantic_error(const std::string& error_description)
+    void output_semantic_error(const std::string& error_description, bool type_matching_error=false)
     {
-        m_output_file_stream << "\nRat26S Semantic Error in " << m_input_file_name << " on line " << get_current_record().line << " with\n"
-                             << "\tToken       : " << get_current_record().token   << '\n'
-                             << "\tLexeme      : " << get_current_record().lexeme  << '\n'
-                             << '\t'               << error_description            << '\n';
+        m_output_file_stream << "\nRat26S Semantic Error in " << m_input_file_name << " on line " << get_current_record().line << " with\n";
+        std::cout            << "\nRat26S Semantic Error in " << m_input_file_name << " on line " << get_current_record().line << " with\n";
+
+        if (!type_matching_error)
+        {
+            m_output_file_stream << "\tToken       : " << get_current_record().token   << '\n'
+                                 << "\tLexeme      : " << get_current_record().lexeme  << '\n'
+                                 << '\t'               << error_description            << '\n';
+            
+            std::cout << "\tToken       : " << get_current_record().token   << '\n'
+                      << "\tLexeme      : " << get_current_record().lexeme  << '\n'
+                      << '\t'               << error_description            << '\n';
+        }
+        else
+        {
+            m_output_file_stream << '\t' << error_description << '\n';
+            std::cout            << '\t' << error_description << '\n';
+        }
         
-        std::cout << "\nRat26S Semantic Error in " << m_input_file_name << " on line " << get_current_record().line << " with\n"
-                  << "\tToken       : " << get_current_record().token   << '\n'
-                  << "\tLexeme      : " << get_current_record().lexeme  << '\n'
-                  << '\t'               << error_description            << '\n';
+        m_output_file_stream << '\n';
+        std::cout << '\n';
     }
 
     // Generate an assembly instruction
@@ -178,10 +193,10 @@ class Rat26SParser
     // replaces the operand with the new current instruction address
     void back_patch(const std::size_t& jmp_instruction_address)
     {
-        std::size_t jmpz_address = jmpz_stack.top();
-        jmpz_stack.pop();
+        std::size_t jmp_address = m_jmp_stack.top();
+        m_jmp_stack.pop();
 
-        std::get<2>(m_instruction_table[jmpz_address - 1]) = std::to_string(jmp_instruction_address);
+        std::get<2>(m_instruction_table[jmp_address - 1]) = std::to_string(jmp_instruction_address);
 
     }
 
@@ -262,7 +277,7 @@ class Rat26SParser
     // Returns the type of each identifier
     std::string get_symbol_type(const std::string& id)
     {
-        for (const auto& symbol_entry : symbol_table)
+        for (const auto& symbol_entry : m_symbol_table)
             if (symbol_entry.identifier_ == id)
                 return symbol_entry.type_;
 
@@ -496,7 +511,7 @@ class Rat26SParser
         write_production("<Qualifier> -> " + get_current_record().lexeme + '\n');
         
         // Save the current type for type checking
-        current_type = get_current_record().lexeme; 
+        m_current_type = get_current_record().lexeme; 
 
         output_current_token();
         lexer();
@@ -598,7 +613,7 @@ class Rat26SParser
             {   
                 if (check_symbol_existence())
                 {
-                    id_stack.push(get_current_record().lexeme);
+                    m_id_stack.push(get_current_record().lexeme);
                 }
                 else
                 {
@@ -762,22 +777,22 @@ class Rat26SParser
         bool rhs_is_integer_literal = get_current_record().token == "integer";
         std::string rhs_value = get_current_record().lexeme;
 
-        checking_boolean_assignment = (left_type == "boolean");
+        m_checking_boolean_assignment = (left_type == "boolean");
 
         std::string right_type = Expression();
 
-        checking_boolean_assignment = false;
+        m_checking_boolean_assignment = false;
 
         if (left_type == "boolean" && right_type == "integer")
         {
             if (!(rhs_is_integer_literal && (rhs_value == "0" || rhs_value == "1")))
             {
-                output_semantic_error("Type mismatch in assignment: boolean can only be assigned 0 or 1");
+                output_semantic_error("Type mismatch in assignment: boolean can only be assigned false or true", true);
             }
         }
         else if (left_type != "Unknown" && right_type != "Unknown" && left_type != right_type)
         {
-            output_semantic_error("Type mismatch in assignment: cannot assign " + right_type + " to " + left_type);
+            output_semantic_error("Type mismatch in assignment: cannot assign " + right_type + " to " + left_type, true);
         }
         
         generate_instruction("POPM", std::to_string(get_address(save)));
@@ -855,7 +870,7 @@ class Rat26SParser
             
             // This is done separately to avoid the back patching that
             // will be done for the jmpz instruction that is handled above
-            jmpz_stack.push(saved_jmp_address);
+            m_jmp_stack.push(saved_jmp_address);
 
 
             output_current_token();
@@ -998,15 +1013,15 @@ class Rat26SParser
         
         IDs();
 
-        for (int i = 0; i < id_stack.size(); ++i)
+        for (int i = 0; i < m_id_stack.size(); ++i)
         {
             generate_instruction("SIN", "nil");
         }
 
-        while (!id_stack.empty())
+        while (!m_id_stack.empty())
         {
-            std::string identifier_argument = id_stack.top();
-            id_stack.pop();
+            std::string identifier_argument = m_id_stack.top();
+            m_id_stack.pop();
 
             generate_instruction("POPM", std::to_string(get_address(identifier_argument)));
         }
@@ -1088,43 +1103,43 @@ class Rat26SParser
 
         if (left_type != "Unknown" && right_type != "Unknown" && left_type != right_type)
         {
-            output_semantic_error("Type mismatch in condition: cannot compare " + left_type + " with " + right_type);
+            output_semantic_error("Type mismatch in condition: cannot compare " + left_type + " with " + right_type, true);
         }
 
         if (current_operator == "<")
         {
             generate_instruction("LES", "nil");
-            jmpz_stack.push(m_instruction_address);
+            m_jmp_stack.push(m_instruction_address);
             generate_instruction("JMPZ", "nil");
         }
         else if (current_operator == ">")
         {
             generate_instruction("GRT", "nil");
-            jmpz_stack.push(m_instruction_address);
+            m_jmp_stack.push(m_instruction_address);
             generate_instruction("JMPZ", "nil");
         }
         else if (current_operator == "==")
         {
             generate_instruction("EQU", "nil");
-            jmpz_stack.push(m_instruction_address);
+            m_jmp_stack.push(m_instruction_address);
             generate_instruction("JMPZ", "nil");
         }
         else if (current_operator == "<=")
         {
             generate_instruction("LEQ", "nil");
-            jmpz_stack.push(m_instruction_address);
+            m_jmp_stack.push(m_instruction_address);
             generate_instruction("JMPZ", "nil");
         }
         else if (current_operator == "=>")
         {
             generate_instruction("GEQ", "nil");
-            jmpz_stack.push(m_instruction_address);
+            m_jmp_stack.push(m_instruction_address);
             generate_instruction("JMPZ", "nil");
         }
         else if (current_operator == "!=")
         {
             generate_instruction("NEQ", "nil");
-            jmpz_stack.push(m_instruction_address);
+            m_jmp_stack.push(m_instruction_address);
             generate_instruction("JMPZ", "nil");
         }
     }
@@ -1160,7 +1175,7 @@ class Rat26SParser
     {
         if (get_current_record().lexeme == "+" || get_current_record().lexeme == "-")
         {
-            if (checking_boolean_assignment)
+            if (m_checking_boolean_assignment)
             {
                 output_semantic_error("Boolean assignment cannot use arithmetic operators");
             }
@@ -1203,7 +1218,7 @@ class Rat26SParser
     {
         if (get_current_record().lexeme == "*" || get_current_record().lexeme == "/")
         {
-            if (checking_boolean_assignment)
+            if (m_checking_boolean_assignment)
             {
                 output_semantic_error("Boolean assignment cannot use arithmetic operators");
             }
@@ -1366,14 +1381,12 @@ class Rat26SParser
             return;
         }
 
-        // check if identifier is undeclared
-        std::vector<SymbolTableEntry>::iterator it  = std::find_if(symbol_table.begin(), symbol_table.end(), [&](const SymbolTableEntry& obj) {
-            return obj.identifier_ == get_current_record().lexeme;
-        });
-        if (it == symbol_table.end()) {
+        // Check if identifier is undeclared
+        if (!check_symbol_existence())
+        {
             output_semantic_error("identifier used without declaration - undeclared variable");
         }
-
+        
         lexer();
     }
 
