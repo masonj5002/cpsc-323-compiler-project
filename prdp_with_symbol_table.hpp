@@ -1267,6 +1267,28 @@ class Rat26SParser
 
             return type;
         }
+        else if (get_current_record().lexeme == "true")
+        {
+            write_production("<Primary> -> true\n");
+
+            output_current_token();
+            lexer();
+
+            generate_instruction("PUSHI", "1");  // treat true as 1
+
+            return "boolean";
+        }
+        else if (get_current_record().lexeme == "false")
+        {
+            write_production("<Primary> -> false\n");
+
+            output_current_token();
+            lexer();
+
+            generate_instruction("PUSHI", "0");  // treat false as 0
+
+            return "boolean";
+        }
         else if (get_current_record().token == "integer")
         {
             write_production("<Primary> -> <Integer>\n");
