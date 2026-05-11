@@ -1,20 +1,16 @@
 @
-/* Determines if a is greater than b */
-function greater_than(a real, b real)
-{
-    if (a > b)
-        return true;
-    otherwise
-        return false;
-    fi
-}
+    /* Empty Function Declaration List */
 @
-    real test_value_1, test_value_2; /* real Declarations */
-    integer i; /* integer Declarations */
+    integer x, y, z; /* Variables for our experiment */
 @
-
-    read(test_value_1, test_value_2);
-    if (greater_than(test_value_1, test_value_2) == true)
-        write(test_value_1);
+    read(x, y, z);
+    write(x);
+    write(y);
+    write(z);
+    
+    if (x > y)
+        z = 100;
+    otherwise  
+        z = -1;
     fi
 @

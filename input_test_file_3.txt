@@ -1,31 +1,24 @@
 @
-/*
-    Calculates the sum of two integers a and b.
-*/
-function calculate_sum(a integer, b integer)
-{
-    return a + b;
-}
+    /* No Function Declarations */
+@
+integer i, max, sum; /* declarations */
+integer x;
+boolean x_is_zero;
+@
+    sum = 0;
+    i = 1;
+    read (max);
+    while (i < max) {
+        sum = sum + i;
+        i = i + 1;
+    }
+    write (sum + max);
 
-/*
-    Calculates the quotient of two integers a and b.
-*/
-function calculate_quotient(a integer, b integer)
-{
-    if (b == 0)
-        return -1.0;
+    read(x);
+    
+    if (x == 0)
+        x_is_zero = true;
+    otherwise
+        x_is_zero = false;
     fi
-
-    return a / b;
-}
-
-@
-    integer x, y, z; /* Variables for our experiment */
-@
-    read(x, y, z);
-    write(x);
-    write(y);
-    write(z);
-    write(calculate_sum(x, y));
-    write(calculate_quotient(y, z));
 @

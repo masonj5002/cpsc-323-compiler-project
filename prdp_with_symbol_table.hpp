@@ -60,9 +60,9 @@ class Rat26SParser
 
  private:
 
-    // ----------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------
     // State of the Parser
-    // ----------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------
 
     std::vector<Record> m_records;
     std::ofstream&      m_output_file_stream;
@@ -80,55 +80,11 @@ class Rat26SParser
     std::string current_qualifier; // not sure if this will work...
     
 
-    // ----------------------------------
-    // Helper functions
-    // ----------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------
+    // Object Code Generation Functions
+    // ----------------------------------------------------------------------------------------------------------------------------------------
 
-    // Safely get current record with bounds checking
-    const Record& get_current_record() const 
-    { 
-        if (m_current_token_index >= static_cast<int>(m_records.size()))
-        {
-            throw std::out_of_range("Parser error: Token index out of bounds");
-        }
-        return m_records[m_current_token_index]; 
-    }
-
-    // Writes the current token and lexeme to the output file
-    void output_current_token()
-    {
-        if (m_print_productions)
-        {
-            m_output_file_stream << "\nToken: " << std::setw(20) << std::left << get_current_record().token << "Lexeme: " << get_current_record().lexeme << '\n';
-        // m_output_file_stream << "\nToken: " << std::setw(20) << std::left << get_current_record().token << "Lexeme: " << get_current_record().lexeme << '\n';
-        
-        // // Assignment 3
-        // if (get_current_record().token == "identifier") {
-        //     // make sure each identifer is only added once
-        //     //if the identifier being inputed exists in the table, skip it
-        //     //std::vector<SymbolTableEntry>::iterator it = std::find()
-        //     bool push_to_table = true;
-        //     for (const SymbolTableEntry& entry : symbol_table) {
-        //         std::cout << get_current_record().lexeme << " " << entry.identifier_ << "\n";
-        //         if (get_current_record().lexeme == entry.identifier_) {
-        //             if (current_qualifier != entry.type_) {
-        //                 std::cout << current_qualifier << " " << entry.type_ << "\n";
-        //                 std::cout << "note: Throw error\n";
-        //             } else {
-        //                 push_to_table = false;
-        //             }
-        //         }
-        //     }
-        //     if (push_to_table) {
-        //         symbol_table.push_back(SymbolTableEntry(get_current_record().lexeme, use_address(), current_qualifier)); 
-        //     }
-        }
-    }
-
-// ================================================== ASSIGNMENT 3 STUFF (DELETE THESE LINES WHEN FINISHED) =============================================
-
-    // Assignment 3
-    // returns the current memory address and increments it by one
+    // Returns the current memory address and increments it by one
     int use_address() {
         current_memory_address++;
         return current_memory_address - 1;
@@ -170,21 +126,26 @@ class Rat26SParser
         return -1; // -1 indicating that the identifier does not exist in the symbol table
     }
     
-    // Print the entire symbol table
-    void print_symbol_table()
+    // Output the entire symbol table to standard output and to the specified output file stream
+    void print_symbol_table(bool output_to_console=false)
     {
         m_output_file_stream << '\n';
-        std::cout            << '\n';
-
+        
         m_output_file_stream << std::setw(30) << std::right << "Symbol Table\n";
         m_output_file_stream << std::setw(20) << std::left << "Identifier" << std::setw(20) << std::left << "MemoryLocation" << std::setw(20) << std::left << "Type" << '\n';;
-
-        std::cout << std::setw(30) << std::right << "Symbol Table\n";
-        std::cout << std::setw(20) << std::left << "Identifier" << std::setw(20) << std::left << "MemoryLocation" << std::setw(20) << std::left << "Type" << '\n';
+        
+        if (output_to_console)
+        {
+            std::cout            << '\n';
+            std::cout << std::setw(30) << std::right << "Symbol Table\n";
+            std::cout << std::setw(20) << std::left << "Identifier" << std::setw(20) << std::left << "MemoryLocation" << std::setw(20) << std::left << "Type" << '\n';
+        }
 
         for (const auto& symbol_entry : symbol_table ) {
             m_output_file_stream << std::setw(20) << std::left << symbol_entry.identifier_ << std::setw(20) << std::left << symbol_entry.memoryAddress_ << std::setw(20) << std::left << symbol_entry.type_ << '\n';
-            std::cout            << std::setw(20) << std::left << symbol_entry.identifier_ << std::setw(20) << std::left << symbol_entry.memoryAddress_ << std::setw(20) << std::left << symbol_entry.type_ << '\n';
+            
+            if (output_to_console)
+                std::cout << std::setw(20) << std::left << symbol_entry.identifier_ << std::setw(20) << std::left << symbol_entry.memoryAddress_ << std::setw(20) << std::left << symbol_entry.type_ << '\n';
         }
     }
 
@@ -203,24 +164,11 @@ class Rat26SParser
                   << '\t'               << error_description            << '\n';
     }
 
-
     // Generate an assembly instruction
     void generate_instruction(const std::string& instruction_operation, const std::string& operand)
     {
-        // if (instruction_operation == "PUSHM")
-        // {
-        //     memory_address_stack.push(operand);
-        // }
-        // else if (instruction_operation == "POPM")
-        // {
-        //     memory_address_stack.pop();
-        // }
-
         m_instruction_table.push_back(std::make_tuple(std::to_string(m_instruction_address), instruction_operation, operand));
 
-        // m_output_file_stream << std::setw(10) << std::left << m_instruction_address << std::setw(10) << std::left << instruction_operation << std::setw(10) << std::left << operand << '\n';
-        // std::cout            << std::setw(10) << std::left << m_instruction_address << std::setw(10) << std::left << instruction_operation << std::setw(10) << std::left << operand << '\n';
-        
         ++m_instruction_address;
     }
 
@@ -228,8 +176,6 @@ class Rat26SParser
     // replaces the operand with the new current instruction address
     void back_patch(const std::size_t& jmp_instruction_address)
     {
-        // std::get<2>(m_instruction_table[jmp_instruction_address - 1]) = std::to_string(m_instruction_address);
-
         std::size_t jmpz_address = jmpz_stack.top();
         jmpz_stack.pop();
 
@@ -237,17 +183,39 @@ class Rat26SParser
 
     }
 
-    void print_instruction_table()
+    void print_instruction_table(bool output_to_console=false)
     {
         for (const auto& t : m_instruction_table)
         {
             m_output_file_stream << std::setw(10) << std::left << std::get<0>(t) << std::setw(10) << std::left << std::get<1>(t) << std::setw(10) << std::left << (std::get<2>(t) == "nil" ? "" : std::get<2>(t)) << '\n';
-            std::cout            << std::setw(10) << std::left << std::get<0>(t) << std::setw(10) << std::left << std::get<1>(t) << std::setw(10) << std::left << (std::get<2>(t) == "nil" ? "" : std::get<2>(t)) << '\n';
+            
+            if (output_to_console)
+                std::cout << std::setw(10) << std::left << std::get<0>(t) << std::setw(10) << std::left << std::get<1>(t) << std::setw(10) << std::left << (std::get<2>(t) == "nil" ? "" : std::get<2>(t)) << '\n';
         }
     }
 
-// ================================================== ASSIGNMENT 3 STUFF (DELETE THESE LINES WHEN FINISHED) =============================================
+    // ----------------------------------------------------------------------------------------------------------------------------------------
+    // Helper functions
+    // ----------------------------------------------------------------------------------------------------------------------------------------
 
+    // Safely get current record with bounds checking
+    const Record& get_current_record() const 
+    { 
+        if (m_current_token_index >= static_cast<int>(m_records.size()))
+        {
+            throw std::out_of_range("Parser error: Token index out of bounds");
+        }
+        return m_records[m_current_token_index]; 
+    }
+
+    // Writes the current token and lexeme to the output file
+    void output_current_token()
+    {
+        if (m_print_productions)
+        {
+            m_output_file_stream << "\nToken: " << std::setw(20) << std::left << get_current_record().token << "Lexeme: " << get_current_record().lexeme << '\n';
+        }
+    }
 
     // Moves to the next token in the list of tokens and lexemes (list of Record objects)
     void lexer()
@@ -290,9 +258,9 @@ class Rat26SParser
     }
 
     
-    // ----------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------
     // Functions that simulate productions
-    // ----------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------
 
     // Simulates <Rat26S> ::= @ <Opt Function Definitions> @ <Opt Declaration List> @ <Statement List> @
     void Rat26S()
@@ -347,9 +315,10 @@ class Rat26SParser
             output_error("end of file");
         }
 
-        // Assignment 3: Display the results
-        print_instruction_table();
-        print_symbol_table();
+        // Display the complete instruction table and symbol table once
+        // syntax analysis and object code generation is finished
+        print_instruction_table(false);
+        print_symbol_table(false);
     }
     
     // Simulates <Opt Function Definitions> ::= <Function Definitions> | <Empty>
@@ -486,10 +455,11 @@ class Rat26SParser
             output_error("integer, boolean, or real");
             return;
         }
-
+        
         write_production("<Qualifier> -> " + get_current_record().lexeme + '\n');
         
-        current_type = get_current_record().lexeme; // Assignment 3
+        // Save the current type for type checking
+        current_type = get_current_record().lexeme; 
 
         output_current_token();
         lexer();
@@ -573,8 +543,6 @@ class Rat26SParser
     {
         write_production("<Declaration> -> <Qualifier> <IDs>\n");
 
-
-        //TODO : some stuff I have figured out yet but we are supposed to check for multiple declarations  ================================================================== Assignment 3
         Qualifier(); // This function will also update the current type when it finishes
 
         IDs(true);
@@ -593,10 +561,9 @@ class Rat26SParser
             {   
                 if (check_symbol_existence())
                 {
-                    // generate_instruction("PUSHM", std::to_string(get_address(get_current_record().lexeme)));
                     id_stack.push(get_current_record().lexeme);
                 }
-                if (!check_symbol_existence()) // <--- change to else if you eventually use the above clause
+                else
                 {
                     output_semantic_error("Undefined identifier");
                 }
@@ -740,20 +707,6 @@ class Rat26SParser
     {
         write_production("<Assign> -> <Identifier> = <Expression> ;\n");
 
-        // std::string identifier_type = "unknown";
-        // if (get_current_record().token == "identifier")
-        // {
-        //     // Check if the identifier is already in the symbol table
-        //     if (check_symbol_existence())
-        //     {
-        //         identifier_type = symbol_table[get_current_record().lexeme].type_;  <--- for some reason I get an error here and I was having trouble solving it
-        //     }
-        //     else
-        //     {
-        //         output_semantic_error("Identifier was not declared");
-        //     }
-        // }
-
         std::string save = get_current_record().lexeme;
 
         Identifier();
@@ -771,6 +724,7 @@ class Rat26SParser
         // TODO (DELETE THIS WHEN FINISHED): We need to be able to determine the overall type of the <Expression> ================================================================ Assignment 3
         // so that we can compare the identifier's type with the expression's type for type checking.
         Expression();
+
         generate_instruction("POPM", std::to_string(get_address(save)));
 
         if (get_current_record().lexeme != ";")
@@ -804,18 +758,19 @@ class Rat26SParser
         output_current_token();
         lexer();
 
-        Condition();
+        Condition(); // Note: There is a jmpz created by calling Condition() which is back patched later on when If_Prime() is called
 
         if (get_current_record().lexeme != ")")
         {
             output_error(")");
             return;
-        }
+        }   
 
         output_current_token();
         lexer();
 
         Statement();
+
         If_Prime();
     }
 
@@ -825,13 +780,28 @@ class Rat26SParser
         if (get_current_record().lexeme == "fi")
         {
             write_production("<If Prime> -> fi\n");
-
+            
+            back_patch(m_instruction_address);
+            generate_instruction("LABEL", "nil");
+            
             output_current_token();
             lexer();
         }
         else if (get_current_record().lexeme == "otherwise")
         {
             write_production("<If Prime> -> otherwise <Statement> fi\n");
+
+            // Back patching for if-otherwise-fi statement
+            std::size_t saved_jmp_address = m_instruction_address;
+            generate_instruction("JMP", "nil");
+
+            back_patch(m_instruction_address); 
+            generate_instruction("LABEL", "nil");
+            
+            // This is done separately to avoid the back patching that
+            // will be done for the jmpz instruction that is handled above
+            jmpz_stack.push(saved_jmp_address);
+
 
             output_current_token();
             lexer();
@@ -843,6 +813,9 @@ class Rat26SParser
                 output_error("fi");
                 return;
             }
+
+            back_patch(m_instruction_address);
+            generate_instruction("LABEL", "nil");
 
             output_current_token();
             lexer();
@@ -1053,6 +1026,7 @@ class Rat26SParser
         Expression();
 
         std::string current_operator = get_current_record().lexeme;
+
         Relop();
         Expression();
 
@@ -1144,7 +1118,7 @@ class Rat26SParser
             lexer();
 
             Term();
-            generate_instruction("S", "nil"); // <-- DOUBLE CHECK. NOT SURE
+            generate_instruction("S", "nil");
 
             Expression_Prime();
         }
@@ -1261,12 +1235,18 @@ class Rat26SParser
         else if (get_current_record().lexeme == "true")
         {
             write_production("<Primary> -> true\n");
-            output_current_token();                         // might have to do something about booleans but not sure yet so just leaving this as a marker
+
+            generate_instruction("PUSHI", "1");
+
+            output_current_token();                         
             lexer();
         }
         else if (get_current_record().lexeme == "false")
         {
             write_production("<Primary> -> false\n");
+
+            generate_instruction("PUSHI", "0");
+
             output_current_token();
             lexer();
         }
@@ -1309,8 +1289,6 @@ class Rat26SParser
             return;
         }
 
-        // MOST RECENT THING ADDED ================================================================================ RIGHT HERE
-        // generate_instruction("PUSHM", std::to_string(get_address(get_current_record().lexeme)));
         lexer();
     }
 

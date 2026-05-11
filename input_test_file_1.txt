@@ -1,1 +1,9 @@
-if (valueFound != 100.346948) write(valueFound); fi /* Checks if value was found. */ 
+@
+    /* No Function Declarations */
+@
+integer a, b, c;
+@
+    if (a < b)
+        a = c;
+    fi
+@

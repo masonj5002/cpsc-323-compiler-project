@@ -1,8 +1,14 @@
 
-<Rat26S> -> @ <Opt Function Definitions> @ <Opt Declaration List> @ <Statement List> @
+1         PUSHM     10000     
+2         PUSHM     10001     
+3         LES                 
+4         JMPZ      7         
+5         PUSHM     10002     
+6         POPM      10000     
+7         LABEL               
 
-Rat26S Syntax Error in input_test_file_1.txt on line 1 with
-	Token       : keyword
-	Lexeme      : if
-	Expected    : @
-	Violation of: <Rat26S> -> @ <Opt Function Definitions> @ <Opt Declaration List> @ <Statement List> @
+                 Symbol Table
+Identifier          MemoryLocation      Type                
+a                   10000               integer             
+b                   10001               integer             
+c                   10002               integer             
